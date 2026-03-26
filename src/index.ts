@@ -60,8 +60,8 @@ function createServer(): McpServer {
           .describe('Chargers with their power sources'),
         format: z
           .enum(['svg', 'png'])
-          .default('png')
-          .describe('Output format: svg for text-based SVG, png for base64-encoded image'),
+          .default('svg')
+          .describe('Output format: svg (recommended, renders inline) or png (base64-encoded image, may not display in all clients)'),
       }),
     },
     async (args) => {
