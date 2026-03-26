@@ -1,0 +1,39 @@
+{
+  "name": "wiring-diagram-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for generating electrical wiring diagrams for campers, boats, and off-grid setups",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "wiring-diagram-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "wiring-diagram",
+    "electrical",
+    "camper",
+    "off-grid",
+    "boat"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.28.0",
+    "express": "^5.1.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
