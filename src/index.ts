@@ -5,7 +5,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
 
-const VOLTPLAN_API_URL = process.env.VOLTPLAN_API_URL || 'http://localhost:3000';
+const VOLTPLAN_API_URL = process.env.VOLTPLAN_API_URL || 'https://voltplan.app';
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
 function createServer(): McpServer {

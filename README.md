@@ -26,7 +26,7 @@ The MCP server starts on `http://localhost:3001/mcp`.
 
 | Environment Variable | Default | Description |
 |---|---|---|
-| `VOLTPLAN_API_URL` | `http://localhost:3000` | URL of the VoltPlan instance |
+| `VOLTPLAN_API_URL` | `https://voltplan.app` | URL of the VoltPlan instance |
 | `PORT` | `3001` | Port for the MCP server |
 
 ## MCP Tools
