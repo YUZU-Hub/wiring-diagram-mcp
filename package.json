@@ -10,7 +10,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsx src/index.ts"
+    "start:http": "node dist/index.js --http",
+    "dev": "tsx src/index.ts",
+    "dev:http": "tsx src/index.ts --http"
   },
   "keywords": [
     "mcp",

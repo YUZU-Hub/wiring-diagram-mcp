@@ -10,14 +10,57 @@ Powered by [VoltPlan](https://voltplan.app).
 - Auto-generated protection components (shunt, main switch, low-voltage cutoff)
 - Auto-calculated fuse sizes and wire gauges
 - Support for solar, shore power, wind, and generator charging systems
-- Available as HTTP MCP server (Streamable HTTP transport)
+- Available as hosted remote MCP, local stdio, or self-hosted HTTP server
 
-## Quick Start
+## Usage
+
+### Hosted (easiest)
+
+No setup needed. Use the public MCP server directly:
+
+**Claude Code:**
+```bash
+claude mcp add wiring-diagram --transport http https://mcp.voltplan.app/mcp
+```
+
+**Claude Desktop** (`claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "wiring-diagram": {
+      "url": "https://mcp.voltplan.app/mcp"
+    }
+  }
+}
+```
+
+### Local via npx
+
+Run locally without installation:
+
+**Claude Code:**
+```bash
+claude mcp add wiring-diagram -- npx wiring-diagram-mcp
+```
+
+**Claude Desktop** (`claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "wiring-diagram": {
+      "command": "npx",
+      "args": ["wiring-diagram-mcp"]
+    }
+  }
+}
+```
+
+### Self-hosted HTTP server
 
 ```bash
 npm install
 npm run build
-npm start
+npm run start:http
 ```
 
 The MCP server starts on `http://localhost:3001/mcp`.
@@ -27,7 +70,7 @@ The MCP server starts on `http://localhost:3001/mcp`.
 | Environment Variable | Default | Description |
 |---|---|---|
 | `VOLTPLAN_API_URL` | `https://voltplan.app` | URL of the VoltPlan instance |
-| `PORT` | `3001` | Port for the MCP server |
+| `PORT` | `3001` | Port for the HTTP server |
 
 ## MCP Tools
 
@@ -68,25 +111,11 @@ Generate a complete electrical wiring diagram.
 
 Returns all available component types with example configurations. Useful for understanding valid parameters before generating a diagram.
 
-## Connecting to Claude Desktop
-
-Add to your Claude Desktop config (`claude_desktop_config.json`):
-
-```json
-{
-  "mcpServers": {
-    "wiring-diagram": {
-      "url": "http://localhost:3001/mcp"
-    }
-  }
-}
-```
-
 ## Docker
 
 ```bash
 docker build -t wiring-diagram-mcp .
-docker run -p 3001:3001 -e VOLTPLAN_API_URL=http://host.docker.internal:3000 wiring-diagram-mcp
+docker run -p 3001:3001 wiring-diagram-mcp
 ```
 
 ## License

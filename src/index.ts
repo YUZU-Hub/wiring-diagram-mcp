@@ -1,12 +1,9 @@
 #!/usr/bin/env node
 
-import express, { Request, Response } from 'express';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
 
 const VOLTPLAN_API_URL = process.env.VOLTPLAN_API_URL || 'https://voltplan.app';
-const PORT = parseInt(process.env.PORT || '3001', 10);
 
 function createServer(): McpServer {
   const server = new McpServer({
@@ -234,44 +231,71 @@ function createServer(): McpServer {
   return server;
 }
 
-const app = express();
-app.use(express.json());
-
-// CORS for remote MCP clients
-app.use((_req: Request, res: Response, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Mcp-Session-Id');
-  res.setHeader('Access-Control-Expose-Headers', 'Mcp-Session-Id');
-  next();
-});
-
-app.options('/mcp', (_req: Request, res: Response) => {
-  res.status(204).end();
-});
-
-app.post('/mcp', async (req: Request, res: Response) => {
+async function startStdio() {
+  const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
   const server = createServer();
-  const transport = new StreamableHTTPServerTransport({
-    sessionIdGenerator: undefined,
-  });
+  const transport = new StdioServerTransport();
   await server.connect(transport);
-  await transport.handleRequest(req, res, req.body);
-});
+}
 
-app.get('/mcp', async (req: Request, res: Response) => {
-  res.status(405).json({ error: 'Method not allowed. Use POST for stateless MCP requests.' });
-});
+async function startHttp() {
+  const { default: express } = await import('express');
+  const { StreamableHTTPServerTransport } = await import(
+    '@modelcontextprotocol/sdk/server/streamableHttp.js'
+  );
 
-app.delete('/mcp', async (req: Request, res: Response) => {
-  res.status(405).json({ error: 'Method not allowed. Stateless server does not support session termination.' });
-});
+  type Req = import('express').Request;
+  type Res = import('express').Response;
 
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', version: '0.1.0' });
-});
+  const PORT = parseInt(process.env.PORT || '3001', 10);
+  const app = express();
+  app.use(express.json());
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Wiring Diagram MCP server running on http://0.0.0.0:${PORT}/mcp`);
-  console.log(`VoltPlan API: ${VOLTPLAN_API_URL}`);
-});
+  // CORS for remote MCP clients
+  app.use((_req: Req, res: Res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Mcp-Session-Id');
+    res.setHeader('Access-Control-Expose-Headers', 'Mcp-Session-Id');
+    next();
+  });
+
+  app.options('/mcp', (_req: Req, res: Res) => {
+    res.status(204).end();
+  });
+
+  app.post('/mcp', async (req: Req, res: Res) => {
+    const server = createServer();
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined,
+    });
+    await server.connect(transport);
+    await transport.handleRequest(req, res, req.body);
+  });
+
+  app.get('/mcp', (_req: Req, res: Res) => {
+    res.status(405).json({ error: 'Method not allowed. Use POST for stateless MCP requests.' });
+  });
+
+  app.delete('/mcp', (_req: Req, res: Res) => {
+    res.status(405).json({
+      error: 'Method not allowed. Stateless server does not support session termination.',
+    });
+  });
+
+  app.get('/health', (_req: Req, res: Res) => {
+    res.json({ status: 'ok', version: '0.1.0' });
+  });
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Wiring Diagram MCP server running on http://0.0.0.0:${PORT}/mcp`);
+    console.log(`VoltPlan API: ${VOLTPLAN_API_URL}`);
+  });
+}
+
+const mode = process.argv.includes('--http') ? 'http' : 'stdio';
+if (mode === 'http') {
+  startHttp();
+} else {
+  startStdio();
+}

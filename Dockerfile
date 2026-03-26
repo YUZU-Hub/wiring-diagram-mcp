@@ -13,4 +13,4 @@ RUN npm ci --omit=dev
 COPY --from=build /app/dist dist/
 ENV PORT=3001
 EXPOSE 3001
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/index.js", "--http"]
