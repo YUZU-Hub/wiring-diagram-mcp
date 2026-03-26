@@ -237,6 +237,19 @@ function createServer(): McpServer {
 const app = express();
 app.use(express.json());
 
+// CORS for remote MCP clients
+app.use((_req: Request, res: Response, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Mcp-Session-Id');
+  res.setHeader('Access-Control-Expose-Headers', 'Mcp-Session-Id');
+  next();
+});
+
+app.options('/mcp', (_req: Request, res: Response) => {
+  res.status(204).end();
+});
+
 app.post('/mcp', async (req: Request, res: Response) => {
   const server = createServer();
   const transport = new StreamableHTTPServerTransport({
