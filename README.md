@@ -9,7 +9,7 @@ Powered by [VoltPlan](https://voltplan.app).
 - Generate complete wiring schematics as SVG or PNG
 - Auto-generated protection components (shunt, main switch, low-voltage cutoff)
 - Auto-calculated fuse sizes and wire gauges
-- Support for solar, shore power, wind, and generator charging systems
+- Support for solar, shore power, wind, generator, and alternator charging systems
 - Available as hosted remote MCP, local stdio, or self-hosted HTTP server
 
 ## Usage
