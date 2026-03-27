@@ -51,7 +51,7 @@ function createServer(): McpServer {
               outputVoltage: z.number().describe('Output voltage'),
               power: z.number().describe('Power rating in watts'),
               sourceType: z
-                .enum(['shore', 'solar', 'wind', 'generator'])
+                .enum(['shore', 'solar', 'wind', 'generator', 'alternator'])
                 .optional()
                 .describe('Type of power source feeding this charger'),
             })
@@ -195,6 +195,16 @@ function createServer(): McpServer {
                   outputVoltage: 12,
                   power: 400,
                   sourceType: 'wind',
+                },
+              },
+              alternator: {
+                description: 'DC-to-DC charger from vehicle alternator',
+                example: {
+                  name: 'Alternator Charger',
+                  inputVoltage: 14,
+                  outputVoltage: 12,
+                  power: 600,
+                  sourceType: 'alternator',
                 },
               },
             },
