@@ -603,6 +603,9 @@ function createServer(): McpServer {
         `- Inverter size: **${result.recommendedInverterSize} W**`,
         `- Must handle at least ${result.totalSurgeWatts} W surge`,
         `- DC current draw at ${args.systemVoltage} V (at full rated load, ~90% efficiency): ${result.dcCurrentAtSystemVoltage} A`,
+        result.dcCurrentAtSystemVoltage > 150 && args.systemVoltage <= 12
+          ? `- **Note:** At ${result.dcCurrentAtSystemVoltage} A DC current, a 12V system requires very heavy cabling. Consider upgrading to a 24V or 48V system to halve or quarter the DC current draw.`
+          : '',
         ``,
         `## Notes`,
         `- Choose a pure sine wave inverter for sensitive electronics (laptops, chargers, audio equipment).`,
@@ -649,6 +652,9 @@ function createServer(): McpServer {
         ``,
         `## Resulting Specs`,
         `- Actual voltage: ${result.actualVoltage} V`,
+        result.actualVoltage !== args.targetVoltage
+          ? `- ${result.actualVoltage} V is the nominal voltage for ${result.seriesCount}S ${args.singleBatteryVoltage} V batteries, compatible with ${args.targetVoltage} V systems.`
+          : '',
         `- Actual capacity: ${result.actualCapacityAh} Ah (${result.actualCapacityWh} Wh)`,
         ``,
         `## Wiring Instructions`,
