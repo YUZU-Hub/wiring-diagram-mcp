@@ -1,6 +1,6 @@
 {
   "name": "wiring-diagram-mcp",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "MCP server for generating electrical wiring diagrams for campers, boats, and off-grid setups",
   "type": "module",
   "main": "dist/index.js",

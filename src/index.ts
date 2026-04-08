@@ -17,7 +17,7 @@ const VOLTPLAN_API_URL = process.env.VOLTPLAN_API_URL || 'https://voltplan.app';
 function createServer(): McpServer {
   const server = new McpServer({
     name: 'wiring-diagram-mcp',
-    version: '0.2.0',
+    version: '0.2.1',
   });
 
   server.registerTool(
@@ -727,7 +727,7 @@ async function startHttp() {
   });
 
   app.get('/health', (_req: Req, res: Res) => {
-    res.json({ status: 'ok', version: '0.2.0' });
+    res.json({ status: 'ok', version: '0.2.1' });
   });
 
   app.listen(PORT, '0.0.0.0', () => {
