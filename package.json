@@ -23,7 +23,15 @@
     "electrical",
     "camper",
     "off-grid",
-    "boat"
+    "boat",
+    "solar",
+    "battery",
+    "wire-gauge",
+    "vanlife",
+    "rv",
+    "12v",
+    "power-budget",
+    "voltplan"
   ],
   "license": "MIT",
   "mcpName": "io.github.YUZU-Hub/wiring-diagram-mcp",

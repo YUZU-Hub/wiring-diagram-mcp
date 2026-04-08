@@ -690,8 +690,15 @@ async function startHttp() {
   type Req = import('express').Request;
   type Res = import('express').Response;
 
+  const { fileURLToPath } = await import('url');
+  const { dirname, join } = await import('path');
+
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+
   const PORT = parseInt(process.env.PORT || '3001', 10);
   const app = express();
+  app.use('/public', express.static(join(__dirname, '..', 'public')));
   app.use(express.json());
 
   // CORS for remote MCP clients

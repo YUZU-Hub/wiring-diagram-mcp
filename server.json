@@ -1,17 +1,26 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.YUZU-Hub/wiring-diagram-mcp",
-  "description": "Generate electrical wiring diagrams for campers, boats, and off-grid setups.",
+  "title": "VoltPlan Wiring Diagrams",
+  "description": "Generate wiring diagrams and run electrical calculators for campers, boats, and off-grid setups.",
   "repository": {
     "url": "https://github.com/YUZU-Hub/wiring-diagram-mcp",
     "source": "github"
   },
-  "version": "0.1.1",
+  "websiteUrl": "https://voltplan.app",
+  "icons": [
+    {
+      "src": "https://mcp.voltplan.app/public/icon-96.png",
+      "mimeType": "image/png",
+      "sizes": ["96x96"]
+    }
+  ],
+  "version": "0.2.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "wiring-diagram-mcp",
-      "version": "0.1.1",
+      "version": "0.2.1",
       "transport": {
         "type": "stdio"
       },
