@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wiring Diagram MCP – VoltPlan</title>
+  <meta name="description" content="MCP server for generating electrical wiring diagrams and running calculators for campers, boats, and off-grid setups. Powered by VoltPlan.">
+  <meta property="og:title" content="Wiring Diagram MCP – VoltPlan">
+  <meta property="og:description" content="Generate wiring diagrams and run electrical calculators for campers, boats, and off-grid setups via MCP.">
+  <meta property="og:image" content="https://mcp.voltplan.app/public/icon-96.png">
+  <meta property="og:url" content="https://yuzu-hub.github.io/wiring-diagram-mcp/">
+  <link rel="icon" type="image/png" href="https://mcp.voltplan.app/public/icon-96.png">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.17/dist/tailwind.min.css" rel="stylesheet" crossorigin="anonymous">
+  <style>
+    :root {
+      --vp-emerald: #059669;
+      --vp-emerald-light: #d1fae5;
+      --vp-emerald-dark: #047857;
+      --vp-sky: #0284c7;
+      --vp-sky-light: #e0f2fe;
+      --vp-amber: #d97706;
+      --vp-amber-light: #fef3c7;
+      --vp-surface: #f8fafc;
+      --vp-border: #e2e8f0;
+      --vp-text: #1e293b;
+      --vp-text-muted: #64748b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      color: var(--vp-text);
+      background: #ffffff;
+      margin: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Navigation */
+    .vp-nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--vp-border);
+    }
+    .vp-nav-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .vp-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: var(--vp-text);
+      font-weight: 700;
+      font-size: 1.125rem;
+    }
+    .vp-logo img {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+    }
+    .vp-logo span {
+      color: var(--vp-emerald);
+    }
+    .vp-nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .vp-nav-links a {
+      text-decoration: none;
+      color: var(--vp-text-muted);
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .vp-nav-links a:hover { color: var(--vp-emerald); }
+
+    /* Hero */
+    .vp-hero {
+      background: linear-gradient(135deg, var(--vp-emerald-light) 0%, #ecfdf5 40%, #f0f9ff 100%);
+      padding: 5rem 1.5rem 4rem;
+      text-align: center;
+    }
+    .vp-hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: white;
+      border: 1px solid var(--vp-border);
+      border-radius: 999px;
+      padding: 0.375rem 1rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--vp-text-muted);
+      margin-bottom: 1.5rem;
+    }
+    .vp-hero-badge-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--vp-emerald);
+    }
+    .vp-hero h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin: 0 0 1.25rem;
+      letter-spacing: -0.025em;
+    }
+    .vp-hero h1 em {
+      font-style: normal;
+      color: var(--vp-emerald);
+    }
+    .vp-hero p {
+      font-size: 1.125rem;
+      color: var(--vp-text-muted);
+      max-width: 600px;
+      margin: 0 auto 2rem;
+      line-height: 1.6;
+    }
+    .vp-hero-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* Buttons */
+    .vp-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+    .vp-btn-primary {
+      background: var(--vp-emerald);
+      color: white;
+    }
+    .vp-btn-primary:hover {
+      background: var(--vp-emerald-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(5,150,105,0.3);
+    }
+    .vp-btn-outline {
+      background: white;
+      color: var(--vp-text);
+      border: 1px solid var(--vp-border);
+    }
+    .vp-btn-outline:hover {
+      border-color: var(--vp-emerald);
+      color: var(--vp-emerald);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    /* Section */
+    .vp-section {
+      padding: 5rem 1.5rem;
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+    .vp-section-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    .vp-section-header h2 {
+      font-size: 1.875rem;
+      font-weight: 700;
+      margin: 0 0 0.75rem;
+      letter-spacing: -0.02em;
+    }
+    .vp-section-header p {
+      color: var(--vp-text-muted);
+      font-size: 1.0625rem;
+      max-width: 560px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Cards Grid */
+    .vp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.25rem;
+    }
+    .vp-card {
+      background: white;
+      border: 1px solid var(--vp-border);
+      border-radius: 0.75rem;
+      padding: 1.75rem;
+      transition: all 0.2s;
+    }
+    .vp-card:hover {
+      border-color: #c6f6d5;
+      box-shadow: 0 4px 20px rgba(5,150,105,0.08);
+      transform: translateY(-2px);
+    }
+    .vp-card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .vp-card h3 {
+      font-size: 1.0625rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+    }
+    .vp-card p {
+      font-size: 0.875rem;
+      color: var(--vp-text-muted);
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    /* Code Block */
+    .vp-code-section {
+      background: var(--vp-surface);
+      border-top: 1px solid var(--vp-border);
+      border-bottom: 1px solid var(--vp-border);
+    }
+    .vp-code-block {
+      background: #1e293b;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      overflow-x: auto;
+      position: relative;
+    }
+    .vp-code-block code {
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.8125rem;
+      color: #e2e8f0;
+      line-height: 1.7;
+    }
+    .vp-code-label {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--vp-text-muted);
+      margin-bottom: 0.75rem;
+    }
+    .vp-code-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--vp-border);
+    }
+    .vp-code-tab {
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--vp-text-muted);
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      transition: all 0.2s;
+    }
+    .vp-code-tab.active {
+      color: var(--vp-emerald);
+      border-bottom-color: var(--vp-emerald);
+    }
+    .vp-code-tab:hover:not(.active) { color: var(--vp-text); }
+    .vp-code-panel { display: none; }
+    .vp-code-panel.active { display: block; }
+    .vp-token-comment { color: #94a3b8; }
+    .vp-token-string { color: #86efac; }
+    .vp-token-key { color: #7dd3fc; }
+    .vp-token-punct { color: #94a3b8; }
+
+    /* Ecosystem */
+    .vp-ecosystem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+    .vp-eco-card {
+      background: white;
+      border: 1px solid var(--vp-border);
+      border-radius: 0.75rem;
+      padding: 2rem;
+      text-decoration: none;
+      color: var(--vp-text);
+      transition: all 0.2s;
+      display: block;
+    }
+    .vp-eco-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+    }
+    .vp-eco-card h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .vp-eco-card p {
+      font-size: 0.9375rem;
+      color: var(--vp-text-muted);
+      line-height: 1.6;
+      margin: 0 0 1rem;
+    }
+    .vp-eco-link {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--vp-emerald);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    /* Footer */
+    .vp-footer {
+      background: #1e293b;
+      color: #cbd5e1;
+      padding: 4rem 1.5rem 2rem;
+    }
+    .vp-footer-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 2rem;
+    }
+    .vp-footer-brand p {
+      font-size: 0.875rem;
+      line-height: 1.6;
+      margin: 0.75rem 0 0;
+      color: #94a3b8;
+    }
+    .vp-footer h4 {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #e2e8f0;
+      margin: 0 0 1rem;
+    }
+    .vp-footer a {
+      display: block;
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.875rem;
+      padding: 0.25rem 0;
+      transition: color 0.2s;
+    }
+    .vp-footer a:hover { color: #86efac; }
+    .vp-footer-bottom {
+      max-width: 1120px;
+      margin: 3rem auto 0;
+      padding-top: 1.5rem;
+      border-top: 1px solid #334155;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8125rem;
+      color: #64748b;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .vp-footer-social {
+      display: flex;
+      gap: 1rem;
+    }
+    .vp-footer-social a {
+      display: inline-flex;
+      padding: 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .vp-footer-inner {
+        grid-template-columns: 1fr 1fr;
+      }
+      .vp-nav-links { display: none; }
+      .vp-grid { grid-template-columns: 1fr; }
+      .vp-ecosystem-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .vp-footer-inner { grid-template-columns: 1fr; }
+      .vp-hero { padding: 3rem 1rem 2.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="vp-nav">
+    <div class="vp-nav-inner">
+      <a href="https://voltplan.app" class="vp-logo">
+        <img src="https://mcp.voltplan.app/public/icon-96.png" alt="VoltPlan">
+        <span>Volt</span>Plan
+      </a>
+      <div class="vp-nav-links">
+        <a href="https://voltplan.app">VoltPlan.app</a>
+        <a href="https://cable.voltplan.app">Cable</a>
+        <a href="https://voltplan.app/blog">Blog</a>
+        <a href="https://github.com/YUZU-Hub/wiring-diagram-mcp" class="vp-btn vp-btn-outline" style="padding:0.5rem 1rem; font-size:0.8125rem;">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="vp-hero">
+    <div class="vp-hero-badge">
+      <span class="vp-hero-badge-dot"></span>
+      Model Context Protocol
+    </div>
+    <h1>Wiring Diagrams &amp; Electrical<br>Calculators via <em>MCP</em></h1>
+    <p>Generate complete electrical schematics and run engineering-grade calculators for campers, boats, and off-grid setups &mdash; directly inside Claude.</p>
+    <div class="vp-hero-actions">
+      <a href="https://mcp.voltplan.app/mcp" class="vp-btn vp-btn-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Connect via Remote MCP
+      </a>
+      <a href="https://www.npmjs.com/package/wiring-diagram-mcp" class="vp-btn vp-btn-outline">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        View on npm
+      </a>
+    </div>
+  </section>
+
+  <!-- Tools / Features -->
+  <section class="vp-section">
+    <div class="vp-section-header">
+      <h2>9 Tools, One MCP Server</h2>
+      <p>Everything you need to design a complete electrical system &mdash; from diagrams to cable sizing to battery configuration.</p>
+    </div>
+    <div class="vp-grid">
+      <div class="vp-card">
+        <div class="vp-card-icon" style="background: var(--vp-emerald-light); color: var(--vp-emerald);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <h3>Wiring Diagram Generator</h3>
+        <p>Generate complete SVG or PNG schematics with automatic protection components &mdash; shunt, main switch, and low-voltage cutoff.</p>
+      </div>
+      <div class="vp-card">
+        <div class="vp-card-icon" style="background: var(--vp-sky-light); color: var(--vp-sky);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        </div>
+        <h3>Power Budget Calculator</h3>
+        <p>Calculate daily energy consumption from a list of loads with watt-hours, peak draw, and runtime analysis.</p>
+      </div>
+      <div class="vp-card">
+        <div class="vp-card-icon" style="background: var(--vp-amber-light); color: var(--vp-amber);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="18" height="12" rx="2"/><line x1="23" y1="10" x2="23" y2="14"/></svg>
+        </div>
+        <h3>Battery Bank Sizing</h3>
+        <p>Determine capacity, number of batteries, and series/parallel configuration with depth-of-discharge and autonomy settings.</p>
+      </div>
+      <div class="vp-card">
+        <div class="vp-card-icon" style="background: var(--vp-emerald-light); color: var(--vp-emerald);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </div>
+        <h3>Solar Panel Sizing</h3>
+        <p>Calculate required solar wattage based on daily consumption, location sun hours, and system efficiency.</p>
+      </div>
+      <div class="vp-card">
+        <div class="vp-card-icon" style="background: var(--vp-sky-light); color: var(--vp-sky);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h3>Charging Time Estimator</h3>
+        <p>Estimate charge duration from solar, shore power, alternator, wind, and generator with bulk/absorption phases.</p>
+      </div>
+      <div class="vp-card">
+        <div class="vp-card-icon" style="background: var(--vp-amber-light); color: var(--vp-amber);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <h3>Inverter Sizing</h3>
+        <p>Size AC inverters for DC battery systems with continuous load, surge handling, and efficiency calculations.</p>
+      </div>
+      <div class="vp-card">
+        <div class="vp-card-icon" style="background: #f3e8ff; color: #9333ea;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        </div>
+        <h3>Battery Configuration</h3>
+        <p>Determine series/parallel arrangements with step-by-step wiring instructions and terminal connection guides.</p>
+      </div>
+      <div class="vp-card">
+        <div class="vp-card-icon" style="background: var(--vp-emerald-light); color: var(--vp-emerald);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+        </div>
+        <h3>Cable Cross-Section Calculator</h3>
+        <p>Find optimal wire gauge with ampacity, voltage drop analysis, and fuse recommendations for any DC circuit.</p>
+      </div>
+      <div class="vp-card">
+        <div class="vp-card-icon" style="background: var(--vp-sky-light); color: var(--vp-sky);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </div>
+        <h3>Component Library</h3>
+        <p>Browse all available component types &mdash; panels, batteries, chargers, loads, and protection devices.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Start -->
+  <section class="vp-code-section">
+    <div class="vp-section" style="padding-top:4rem; padding-bottom:4rem;">
+      <div class="vp-section-header">
+        <h2>Quick Start</h2>
+        <p>Connect to the MCP server in seconds. Choose the method that fits your workflow.</p>
+      </div>
+
+      <div class="vp-code-tabs" role="tablist">
+        <button class="vp-code-tab active" onclick="showTab('claude-desktop')" role="tab">Claude Desktop</button>
+        <button class="vp-code-tab" onclick="showTab('claude-code')" role="tab">Claude Code</button>
+        <button class="vp-code-tab" onclick="showTab('npx')" role="tab">npx</button>
+        <button class="vp-code-tab" onclick="showTab('docker')" role="tab">Docker</button>
+      </div>
+
+      <div id="claude-desktop" class="vp-code-panel active">
+        <span class="vp-code-label">claude_desktop_config.json</span>
+        <div class="vp-code-block"><code><span class="vp-token-punct">{</span>
+  <span class="vp-token-key">"mcpServers"</span><span class="vp-token-punct">:</span> <span class="vp-token-punct">{</span>
+    <span class="vp-token-key">"voltplan-wiring"</span><span class="vp-token-punct">:</span> <span class="vp-token-punct">{</span>
+      <span class="vp-token-key">"type"</span><span class="vp-token-punct">:</span> <span class="vp-token-string">"url"</span><span class="vp-token-punct">,</span>
+      <span class="vp-token-key">"url"</span><span class="vp-token-punct">:</span> <span class="vp-token-string">"https://mcp.voltplan.app/mcp"</span>
+    <span class="vp-token-punct">}</span>
+  <span class="vp-token-punct">}</span>
+<span class="vp-token-punct">}</span></code></div>
+      </div>
+
+      <div id="claude-code" class="vp-code-panel">
+        <span class="vp-code-label">Terminal</span>
+        <div class="vp-code-block"><code><span class="vp-token-comment"># Add as remote MCP server</span>
+claude mcp add voltplan-wiring \
+  --transport http \
+  https://mcp.voltplan.app/mcp</code></div>
+      </div>
+
+      <div id="npx" class="vp-code-panel">
+        <span class="vp-code-label">Terminal</span>
+        <div class="vp-code-block"><code><span class="vp-token-comment"># Run locally via npx (no install needed)</span>
+npx wiring-diagram-mcp
+
+<span class="vp-token-comment"># Or start as HTTP server</span>
+npx wiring-diagram-mcp --http</code></div>
+      </div>
+
+      <div id="docker" class="vp-code-panel">
+        <span class="vp-code-label">Terminal</span>
+        <div class="vp-code-block"><code><span class="vp-token-comment"># Build and run with Docker</span>
+docker build -t wiring-diagram-mcp .
+docker run -p 3001:3001 wiring-diagram-mcp</code></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ecosystem -->
+  <section class="vp-section">
+    <div class="vp-section-header">
+      <h2>Part of the VoltPlan Ecosystem</h2>
+      <p>Designed to work seamlessly with VoltPlan's suite of electrical design tools.</p>
+    </div>
+    <div class="vp-ecosystem-grid">
+      <a href="https://voltplan.app" class="vp-eco-card">
+        <h3>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--vp-emerald)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          VoltPlan
+        </h3>
+        <p>Free electrical system design software and 12V wiring diagram creator. Drag-and-drop interface with automatic wire sizing, component libraries, and PDF export.</p>
+        <span class="vp-eco-link">Open VoltPlan.app &rarr;</span>
+      </a>
+      <a href="https://cable.voltplan.app" class="vp-eco-card">
+        <h3>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--vp-sky)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          Cable by VoltPlan
+        </h3>
+        <p>iOS companion app for DC wiring planning. Automatic cable sizing with safety guardrails, real-time fuse recommendations, and BOM checklists.</p>
+        <span class="vp-eco-link">Get Cable for iOS &rarr;</span>
+      </a>
+      <a href="https://voltplan.app/tools/wire-gauge-calculator" class="vp-eco-card">
+        <h3>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--vp-amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+          Wire Gauge Calculator
+        </h3>
+        <p>Free online tool for calculating optimal wire gauge, voltage drop, and fuse sizing for any 12V/24V/48V DC circuit.</p>
+        <span class="vp-eco-link">Open Calculator &rarr;</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="vp-footer">
+    <div class="vp-footer-inner">
+      <div class="vp-footer-brand">
+        <a href="https://voltplan.app" class="vp-logo" style="color:white;">
+          <img src="https://mcp.voltplan.app/public/icon-96.png" alt="VoltPlan" style="width:28px;height:28px;">
+          <span style="color:#86efac;">Volt</span>Plan
+        </a>
+        <p>Open-source MCP server for electrical system design. Generate wiring diagrams and run calculators for campers, boats, and off-grid setups.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <a href="https://voltplan.app">VoltPlan.app</a>
+        <a href="https://cable.voltplan.app">Cable App</a>
+        <a href="https://voltplan.app/tools/wire-gauge-calculator">Wire Calculator</a>
+        <a href="https://voltplan.app/blog">Blog</a>
+      </div>
+      <div>
+        <h4>Developer</h4>
+        <a href="https://github.com/YUZU-Hub/wiring-diagram-mcp">GitHub</a>
+        <a href="https://www.npmjs.com/package/wiring-diagram-mcp">npm Registry</a>
+        <a href="https://mcp.voltplan.app/mcp">Remote MCP</a>
+        <a href="https://github.com/YUZU-Hub/wiring-diagram-mcp/blob/main/LICENSE">MIT License</a>
+      </div>
+      <div>
+        <h4>Community</h4>
+        <a href="https://discord.gg/voltplan">Discord</a>
+        <a href="https://x.com/voltaborapp">X / Twitter</a>
+        <a href="https://bsky.app/profile/voltplan.app">Bluesky</a>
+        <a href="https://reddit.com/r/voltplan">Reddit</a>
+      </div>
+    </div>
+    <div class="vp-footer-bottom">
+      <span>&copy; 2025 VoltPlan by YuzuHub UG (haftungsbeschr&auml;nkt)</span>
+      <div style="display:flex; gap:1.5rem;">
+        <a href="https://voltplan.app/datenschutz" style="color:#64748b;">Privacy</a>
+        <a href="https://voltplan.app/impressum" style="color:#64748b;">Imprint</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function showTab(id) {
+      document.querySelectorAll('.vp-code-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.vp-code-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>
