@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="14">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#475569"/>
+    </marker>
+    <style><![CDATA[
+      .box { fill: #ffffff; stroke: #334155; stroke-width: 1.5; rx: 8; ry: 8; }
+      .accent { fill: #fef3c7; stroke: #d97706; }
+      .output { fill: #ecfeff; stroke: #0e7490; }
+      .label { fill: #0f172a; }
+      .sub { fill: #64748b; font-size: 12px; }
+      .edge { stroke: #475569; stroke-width: 1.5; fill: none; }
+      @media (prefers-color-scheme: dark) {
+        .box { fill: #0f172a; stroke: #cbd5e1; }
+        .accent { fill: #422006; stroke: #f59e0b; }
+        .output { fill: #083344; stroke: #67e8f9; }
+        .label { fill: #f1f5f9; }
+        .sub { fill: #94a3b8; }
+        .edge { stroke: #cbd5e1; }
+      }
+    ]]></style>
+  </defs>
+
+  <rect class="box" x="30" y="140" width="120" height="60"/>
+  <text class="label" x="90" y="170" text-anchor="middle" font-weight="600">User</text>
+  <text class="sub" x="90" y="188" text-anchor="middle">Boat / van / cabin</text>
+
+  <rect class="box" x="200" y="140" width="160" height="60"/>
+  <text class="label" x="280" y="170" text-anchor="middle" font-weight="600">AI Assistant</text>
+  <text class="sub" x="280" y="188" text-anchor="middle">Claude, Cursor, Cline</text>
+
+  <rect class="box accent" x="410" y="140" width="160" height="60"/>
+  <text class="label" x="490" y="170" text-anchor="middle" font-weight="600">MCP Server</text>
+  <text class="sub" x="490" y="188" text-anchor="middle">wiring-diagram-mcp</text>
+
+  <rect class="box" x="640" y="60" width="220" height="60"/>
+  <text class="label" x="750" y="90" text-anchor="middle" font-weight="600">Calculation Engine</text>
+  <text class="sub" x="750" y="108" text-anchor="middle">Power, battery, solar, gauge</text>
+
+  <rect class="box" x="640" y="220" width="220" height="60"/>
+  <text class="label" x="750" y="250" text-anchor="middle" font-weight="600">Diagram Renderer</text>
+  <text class="sub" x="750" y="268" text-anchor="middle">VoltPlan API</text>
+
+  <rect class="box output" x="640" y="300" width="220" height="50"/>
+  <text class="label" x="750" y="330" text-anchor="middle" font-weight="600">Wiring Diagram (SVG / PNG)</text>
+
+  <line class="edge" x1="150" y1="170" x2="200" y2="170" marker-end="url(#arrow)"/>
+  <line class="edge" x1="360" y1="170" x2="410" y2="170" marker-end="url(#arrow)"/>
+  <path class="edge" d="M 570 170 C 605 170, 605 90, 640 90" marker-end="url(#arrow)"/>
+  <path class="edge" d="M 570 170 C 605 170, 605 250, 640 250" marker-end="url(#arrow)"/>
+  <line class="edge" x1="750" y1="280" x2="750" y2="300" marker-end="url(#arrow)"/>
+</svg>
