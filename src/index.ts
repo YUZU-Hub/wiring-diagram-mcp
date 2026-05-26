@@ -701,6 +701,24 @@ async function startHttp() {
   app.use('/public', express.static(join(__dirname, '..', 'public')));
   app.use(express.json());
 
+  // Request logging: one line per request with status, duration, and MCP details
+  app.use((req: Req, res: Res, next) => {
+    const start = Date.now();
+    const body = req.body as { method?: string; params?: { name?: string } } | undefined;
+    const mcpMethod = body?.method;
+    const toolName = body?.params?.name;
+    res.on('finish', () => {
+      const ms = Date.now() - start;
+      const detail = mcpMethod
+        ? ` ${mcpMethod}${toolName ? ` (${toolName})` : ''}`
+        : '';
+      console.log(
+        `${new Date().toISOString()} ${req.method} ${req.originalUrl}${detail} -> ${res.statusCode} ${ms}ms`
+      );
+    });
+    next();
+  });
+
   // CORS for remote MCP clients
   app.use((_req: Req, res: Res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
