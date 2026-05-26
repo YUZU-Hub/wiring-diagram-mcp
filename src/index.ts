@@ -56,7 +56,7 @@ function createServer(): McpServer {
           .array(
             z.object({
               name: z.string().describe('Charger name (e.g. "MPPT Solar Charger")'),
-              inputVoltage: z.number().describe('Input voltage'),
+              inputVoltage: z.number().describe('Input voltage. For shore/generator (AC) chargers use the regional mains voltage: 230 V in Europe, UK, Australia, most of Asia and Africa; 120 V in North America and Japan. For solar/wind use the panel or turbine output voltage. For alternator use the vehicle system voltage (typically 14 V).'),
               outputVoltage: z.number().describe('Output voltage'),
               power: z.number().describe('Power rating in watts'),
               sourceType: z
@@ -177,7 +177,7 @@ function createServer(): McpServer {
                 },
               },
               shore: {
-                description: 'AC-to-DC charger from shore/mains power',
+                description: 'AC-to-DC charger from shore/mains power. Use the regional mains voltage as inputVoltage: 230 V in Europe/UK/Australia, 120 V in North America/Japan.',
                 example: {
                   name: 'Shore Power Charger',
                   inputVoltage: 230,
@@ -187,7 +187,7 @@ function createServer(): McpServer {
                 },
               },
               generator: {
-                description: 'Charger powered by a generator',
+                description: 'Charger powered by a generator. Use the regional mains voltage as inputVoltage: 230 V in Europe/UK/Australia, 120 V in North America/Japan.',
                 example: {
                   name: 'Generator Charger',
                   inputVoltage: 230,
