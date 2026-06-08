@@ -1,14 +1,29 @@
 {
   "name": "wiring-diagram-mcp",
-  "version": "0.2.1",
-  "description": "MCP server for generating electrical wiring diagrams for campers, boats, and off-grid setups",
+  "version": "0.2.2",
+  "description": "MCP server that generates 12V/24V/48V wiring diagrams and sizes wires, fuses, batteries, solar arrays, and inverters for campers, boats, and off-grid systems.",
   "type": "module",
   "main": "dist/index.js",
+  "homepage": "https://voltplan.app/wiring-diagram-mcp",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YUZU-Hub/wiring-diagram-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/YUZU-Hub/wiring-diagram-mcp/issues"
+  },
   "bin": {
     "wiring-diagram-mcp": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "server.json"
+  ],
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "start": "node dist/index.js",
     "start:http": "node dist/index.js --http",
     "dev": "tsx src/index.ts",
