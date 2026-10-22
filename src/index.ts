@@ -22,7 +22,7 @@ export function trackUmami(eventName: string, eventData?: Record<string, unknown
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'User-Agent': 'Mozilla/5.0 (compatible; VoltPlan-MCP/0.2.3; +https://voltplan.app)',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
     },
     body: JSON.stringify({
       type: 'event',
