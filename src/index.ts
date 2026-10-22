@@ -13,11 +13,34 @@ import {
 } from './electricalCalculators.js';
 
 const VOLTPLAN_API_URL = process.env.VOLTPLAN_API_URL || 'https://voltplan.app';
+const UMAMI_URL = process.env.UMAMI_URL || 'https://umami.yuzu.chat';
+const UMAMI_WEBSITE_ID = process.env.UMAMI_WEBSITE_ID || '0e838cbf-d608-4400-b2c7-4557f2613cec';
 
-function createServer(): McpServer {
+export function trackUmami(eventName: string, eventData?: Record<string, unknown>) {
+  if (!UMAMI_URL || !UMAMI_WEBSITE_ID) return;
+  fetch(`${UMAMI_URL}/api/send`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (compatible; VoltPlan-MCP/0.2.3; +https://voltplan.app)',
+    },
+    body: JSON.stringify({
+      type: 'event',
+      payload: {
+        website: UMAMI_WEBSITE_ID,
+        name: eventName,
+        data: eventData,
+        url: '/mcp',
+        hostname: 'mcp.voltplan.app',
+      },
+    }),
+  }).catch(() => {});
+}
+
+export function createServer(): McpServer {
   const server = new McpServer({
     name: 'wiring-diagram-mcp',
-    version: '0.2.1',
+    version: '0.2.3',
   });
 
   server.registerTool(
@@ -76,6 +99,7 @@ function createServer(): McpServer {
     async (args) => {
       const { format, ...body } = args;
       const wantsPng = format === 'png';
+      trackUmami('mcp_tool_call', { tool: 'generate_wiring_diagram', format });
 
       const response = await fetch(`${VOLTPLAN_API_URL}/api/diagram/generate`, {
         method: 'POST',
@@ -99,6 +123,8 @@ function createServer(): McpServer {
         };
       }
 
+      const ctaText = `\n---\n*Interactive Editor:* Customize and verify this diagram in the [VoltPlan Diagram Editor](https://voltplan.app/wireframe/new).\n*Components & Hardware:* Browse verified parts in the [VoltPlan Component Catalog](https://voltplan.app/components).`;
+
       if (wantsPng) {
         const buffer = Buffer.from(await response.arrayBuffer());
         const base64 = buffer.toString('base64');
@@ -109,6 +135,10 @@ function createServer(): McpServer {
               data: base64,
               mimeType: 'image/png' as const,
             },
+            {
+              type: 'text' as const,
+              text: ctaText,
+            },
           ],
         };
       }
@@ -118,7 +148,7 @@ function createServer(): McpServer {
         content: [
           {
             type: 'text' as const,
-            text: svg,
+            text: `${svg}\n\n${ctaText}`,
           },
         ],
       };
@@ -134,6 +164,7 @@ function createServer(): McpServer {
         'Use this to understand what parameters are needed before calling generate_wiring_diagram.',
     },
     async () => {
+      trackUmami('mcp_tool_call', { tool: 'list_component_types' });
       const reference = {
         componentTypes: {
           battery: {
@@ -233,6 +264,8 @@ function createServer(): McpServer {
           'Current (amps) for loads is calculated as power / voltage, but you can override it.',
           'Multiple batteries of the same voltage are wired in parallel automatically.',
           'The diagram shows positive (red) and negative (black) wiring with proper fusing.',
+          'Browse verified parts with specifications in the VoltPlan Component Catalog: https://voltplan.app/components',
+          'Design and customize your full electrical diagram interactively: https://voltplan.app/wireframe/new',
         ],
       };
 
@@ -268,7 +301,7 @@ function createServer(): McpServer {
     },
     async (args) => {
       const { voltage, current: currentArg, power, cableLengthM, maxVoltageDropPercent, temperatureCelsius, isRoundTrip } = args;
-
+      trackUmami('mcp_tool_call', { tool: 'calculate_wire_gauge', voltage });
       if (!currentArg && !power) {
         return {
           isError: true,
@@ -345,6 +378,11 @@ function createServer(): McpServer {
         `The fuse is sized at 125% of the continuous load current (${Math.round(current * 100) / 100} A) and rounded up to the next standard fuse size.`,
         `Always install the fuse as close to the battery positive terminal as possible (within 18 cm / 7 inches).`,
         ``,
+        `## Sourced Hardware & Recommended Parts`,
+        `- Recommended Cable: [Battery Cable ${result.recommendedGauge.mm2} mm² / ${result.recommendedGauge.awg}](https://voltplan.app/api/go?q=${encodeURIComponent(`battery cable ${result.recommendedGauge.mm2}mm2 ${result.recommendedGauge.awg}`)})`,
+        `- Recommended Fuse: [${result.fuse.size}A ${result.fuse.type} Fuse](https://voltplan.app/api/go?q=${encodeURIComponent(`${result.fuse.size}A ${result.fuse.type} fuse`)})`,
+        `- Design and simulate your complete DC circuit in the [VoltPlan Diagram Maker](https://voltplan.app/wiring-diagram-maker).`,
+        ``,
         `## Overall Assessment`,
         `Status: **${result.status.toUpperCase()}**`,
         `${result.statusMessage}`,
@@ -380,6 +418,7 @@ function createServer(): McpServer {
       }),
     },
     async (args) => {
+      trackUmami('mcp_tool_call', { tool: 'calculate_power_budget', systemVoltage: args.systemVoltage });
       const result = calculatePowerBudget(args.loads, args.systemVoltage);
 
       const loadLines = result.loads.map(
@@ -401,8 +440,10 @@ function createServer(): McpServer {
         `## Peak Load`,
         `- Peak power if all loads run simultaneously: **${result.peakWatts} W** (${result.peakAmps} A at ${args.systemVoltage} V)`,
         ``,
-        `## Next Steps`,
-        `Use the daily consumption of ${result.totalDailyWh} Wh as input for battery bank sizing (calculate_battery_bank) and solar panel sizing (calculate_solar_size).`,
+        `## Next Steps & System Design`,
+        `- Battery Sizing: Use calculate_battery_bank to size your battery storage for ${result.totalDailyWh} Wh/day.`,
+        `- Solar Sizing: Use calculate_solar_size to size a solar array that covers ${result.totalDailyWh} Wh/day.`,
+        `- Schematic Editor: Build and visualize your complete electrical setup in the [VoltPlan Diagram Maker](https://voltplan.app/wiring-diagram-maker).`,
       ].join('\n');
 
       return { content: [{ type: 'text' as const, text }] };
@@ -429,6 +470,7 @@ function createServer(): McpServer {
       }),
     },
     async (args) => {
+      trackUmami('mcp_tool_call', { tool: 'calculate_battery_bank', systemVoltage: args.systemVoltage });
       const result = calculateBatteryBank(args);
 
       const text = [
@@ -449,6 +491,10 @@ function createServer(): McpServer {
         `- Total capacity: ${result.totalCapacityAh} Ah (${result.totalCapacityWh} Wh)`,
         `- Usable capacity: ${result.usableCapacityWh} Wh (at ${args.depthOfDischargePercent}% DoD)`,
         `- This provides approximately ${Math.round((result.usableCapacityWh / args.dailyConsumptionWh) * 10) / 10} days of autonomy.`,
+        ``,
+        `## Sourced Hardware & Recommended Parts`,
+        `- Recommended Battery: [${args.singleBatteryAh}Ah ${args.singleBatteryVoltage >= 12.8 ? 'LiFePO4' : 'Deep Cycle'} Battery](https://voltplan.app/api/go?q=${encodeURIComponent(`${args.singleBatteryAh}Ah ${args.singleBatteryVoltage >= 12.8 ? 'LiFePO4' : 'Deep Cycle'} battery`)})`,
+        `- Fine-tune battery capacity and compare chemistries in the [VoltPlan Battery Bank Sizer](https://voltplan.app/tools/battery-bank-sizer).`,
         ``,
         `## Next Steps`,
         `Use calculate_battery_config for detailed wiring instructions, or calculate_solar_size to size a solar array for this battery bank.`,
@@ -476,6 +522,7 @@ function createServer(): McpServer {
       }),
     },
     async (args) => {
+      trackUmami('mcp_tool_call', { tool: 'calculate_solar_size' });
       const result = calculateSolarSize(args);
 
       const configLines = result.recommendedPanelConfigs.map(
@@ -498,13 +545,16 @@ function createServer(): McpServer {
         `## Common Panel Configurations`,
         ...configLines,
         ``,
+        `## Sourced Hardware & Resources`,
+        `- Monocrystalline Solar Panels: [${result.recommendedPanelConfigs[0]?.panelWatts || 200}W Solar Panel](https://voltplan.app/api/go?q=${encodeURIComponent(`${result.recommendedPanelConfigs[0]?.panelWatts || 200}W monocrystalline solar panel`)})`,
+        `- Plan array wiring and MPPT selection on the [VoltPlan Solar Panel Calculator](https://voltplan.app/tools/solar-panel-calculator).`,
+        ``,
         `## Notes`,
         `- Peak sun hours vary significantly by season and location. Size for the worst month you expect to use the system.`,
         `- Panels mounted flat on a roof typically get 10-20% less than optimally tilted panels.`,
         `- Partial shading can dramatically reduce output. Even small shadows on one cell can reduce the output of an entire panel.`,
         `- In cloudy or winter conditions, consider supplementing solar with shore power or an alternator charger.`,
       ].join('\n');
-
       return { content: [{ type: 'text' as const, text }] };
     }
   );
@@ -529,6 +579,7 @@ function createServer(): McpServer {
       }),
     },
     async (args) => {
+      trackUmami('mcp_tool_call', { tool: 'calculate_charging_time' });
       const result = calculateChargingTime(args);
 
       const text = [
@@ -548,6 +599,10 @@ function createServer(): McpServer {
         `- Bulk phase (constant current, up to 80% SoC): **${result.bulkPhaseHours} hours**`,
         `- Absorption phase (tapering current, 80-100% SoC): **${result.absorptionPhaseHours} hours**`,
         `- Total estimated charging time: **${result.totalHours} hours**`,
+        ``,
+        `## Recommended Chargers & Resources`,
+        `- Smart Battery Chargers: [${args.batteryVoltage}V Smart Battery Charger](https://voltplan.app/api/go?q=${encodeURIComponent(`${args.batteryVoltage}V smart battery charger LiFePO4`)})`,
+        `- Calculate exact charge curves and power profiles in the [VoltPlan Charge Time Calculator](https://voltplan.app/tools/charge-time-calculator).`,
         ``,
         `## Notes`,
         `- The bulk phase charges at full current until approximately 80% state of charge.`,
@@ -582,6 +637,7 @@ function createServer(): McpServer {
       }),
     },
     async (args) => {
+      trackUmami('mcp_tool_call', { tool: 'calculate_inverter_size', systemVoltage: args.systemVoltage });
       const result = calculateInverterSize(args.loads, args.systemVoltage);
 
       const loadLines = result.loads.map(
@@ -606,6 +662,10 @@ function createServer(): McpServer {
         result.dcCurrentAtSystemVoltage > 150 && args.systemVoltage <= 12
           ? `- **Note:** At ${result.dcCurrentAtSystemVoltage} A DC current, a 12V system requires very heavy cabling. Consider upgrading to a 24V or 48V system to halve or quarter the DC current draw.`
           : '',
+        ``,
+        `## Sourced Hardware & Resources`,
+        `- Pure Sine Wave Inverters: [${result.recommendedInverterSize}W Pure Sine Inverter (${args.systemVoltage}V)](https://voltplan.app/api/go?q=${encodeURIComponent(`${result.recommendedInverterSize}W pure sine wave inverter ${args.systemVoltage}V`)})`,
+        `- Compare inverter models, surges, and idle draws with the [VoltPlan Inverter Size Calculator](https://voltplan.app/tools/inverter-size-calculator).`,
         ``,
         `## Notes`,
         `- Choose a pure sine wave inverter for sensitive electronics (laptops, chargers, audio equipment).`,
@@ -635,6 +695,7 @@ function createServer(): McpServer {
       }),
     },
     async (args) => {
+      trackUmami('mcp_tool_call', { tool: 'calculate_battery_config', targetVoltage: args.targetVoltage });
       const result = calculateBatteryConfig(args);
 
       const text = [
@@ -659,6 +720,10 @@ function createServer(): McpServer {
         ``,
         `## Wiring Instructions`,
         ...result.wiringInstructions.map((s) => `- ${s}`),
+        ``,
+        `## System Planning & Diagram`,
+        `- Visualize this battery configuration in the [VoltPlan Diagram Maker](https://voltplan.app/wiring-diagram-maker).`,
+        `- Explore battery models and wiring diagrams in the [VoltPlan Battery Bank Sizer](https://voltplan.app/tools/battery-bank-sizer).`,
         ``,
         `## Safety`,
         `- Always use batteries of the same type, brand, age, and capacity in a bank.`,
@@ -715,6 +780,15 @@ async function startHttp() {
       console.log(
         `${new Date().toISOString()} ${req.method} ${req.originalUrl}${detail} -> ${res.statusCode} ${ms}ms`
       );
+
+      // Track connection handshakes to Umami
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        if (mcpMethod === 'initialize') {
+          trackUmami('mcp_initialize');
+        } else if (mcpMethod === 'tools/list') {
+          trackUmami('mcp_tools_list');
+        }
+      }
     });
     next();
   });
@@ -752,7 +826,7 @@ async function startHttp() {
   });
 
   app.get('/health', (_req: Req, res: Res) => {
-    res.json({ status: 'ok', version: '0.2.1' });
+    res.json({ status: 'ok', version: '0.2.3' });
   });
 
   app.listen(PORT, '0.0.0.0', () => {
