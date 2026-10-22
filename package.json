@@ -1,6 +1,6 @@
 {
   "name": "wiring-diagram-mcp",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "MCP server that generates 12V/24V/48V wiring diagrams and sizes wires, fuses, batteries, solar arrays, and inverters for campers, boats, and off-grid systems.",
   "type": "module",
   "main": "dist/index.js",
