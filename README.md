@@ -36,7 +36,7 @@ Nine tools, all callable by name from any MCP client:
 | `calculate_wire_gauge` | AWG / mm² for current and run length, with fuse recommendation |
 | `calculate_inverter_size` | Inverter wattage for AC loads, with surge headroom and DC current draw |
 | `calculate_charging_time` | Time from X% to Y% SoC, with bulk and absorption phases |
-| `generate_wiring_diagram` | Complete schematic as SVG or PNG, auto-fused and protected |
+| `generate_wiring_diagram` | Complete schematic as an image (PNG, default) or icon-free SVG, auto-fused and protected, plus a link that opens the system in the VoltPlan editor |
 | `list_component_types` | Component reference and example configs for diagram building |
 
 ## Demo
@@ -81,7 +81,9 @@ Status: OK — wire size meets all requirements.
 
 > *"Generate a wiring diagram for: 2 × 100W solar → MPPT → 200 Ah LiFePO4 → BMV-712 monitor → main 12V bus → fridge, lights, USB."*
 
-Claude calls `generate_wiring_diagram` and returns an SVG: batteries with terminals, MPPT charger, auto-generated shunt, main switch, low-voltage cutoff, and fused load lines in red/black with computed gauges.
+Claude calls `generate_wiring_diagram` and shows the schematic as an image: batteries with terminals, MPPT charger, auto-generated shunt, main switch, low-voltage cutoff, and fused load lines in red/black with computed gauges. Below it comes a link that opens the system in the VoltPlan editor with the battery, the solar panel and the first load already placed, to finish, save and turn into a shopping list.
+
+Loads need only `power` or `current`, batteries only `capacityAh` or `energyWh`; the server derives the rest, and voltages default to the first battery's.
 
 See [`examples/`](./examples) for five fully-worked scenarios — sailboat refit, Sprinter van, off-grid cabin, day sailer, live-aboard — each with the prompt, the expected tool calls, and the resulting numbers.
 
@@ -165,6 +167,8 @@ npm run start:http   # listens on http://localhost:3001/mcp
 | Env var | Default | Purpose |
 |---|---|---|
 | `VOLTPLAN_API_URL` | `https://voltplan.app` | VoltPlan instance for diagram rendering |
+| `VOLTPLAN_PB_URL` | `https://base.voltplan.app` | VoltPlan catalogue (public, read-only) for curated cable and fuse links |
+| `VOLTPLAN_TELEMETRY` | on | `off` disables the usage events described under [Telemetry](#telemetry) |
 | `PORT` | `3001` | HTTP server port |
 
 ### Docker
@@ -178,7 +182,15 @@ docker run -p 3001:3001 wiring-diagram-mcp
 
 ![Architecture](./docs/architecture.svg)
 
-Calculations run locally inside the MCP server (deterministic, no network). Diagram rendering hits the VoltPlan API and returns an SVG or PNG that the AI client embeds in the chat.
+Calculations run inside the MCP server and are deterministic. Diagram rendering hits the VoltPlan API and returns a PNG (or SVG) that the AI client shows in the chat. `calculate_wire_gauge` additionally reads VoltPlan's public catalogue (cached for an hour) to link the recommended cable and fuse to a curated product; without it the links fall back to a store search.
+
+### Links and attribution
+
+Buy links go through `voltplan.app/api/go` with `source=mcp`, which picks the reader's local Amazon store; VoltPlan earns a commission on purchases (Amazon Associate). Links to voltplan.app pages carry `utm_source=mcp`.
+
+## Telemetry
+
+The server sends anonymous usage events to VoltPlan's cookieless analytics (Umami): connection handshakes and tool calls, with the tool name, a few coarse inputs (system voltage, output format) and the client's product name (e.g. `claude-ai`, from the MCP `clientInfo` or the HTTP User-Agent). No prompts, no tool arguments beyond those, no IP-derived identifiers. Set `VOLTPLAN_TELEMETRY=off` to disable it.
 
 ## Examples
 
