@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { trackUmami, createServer } from './index.js';
+import { trackUmami, createServer, clientLabel } from './index.js';
 
 describe('MCP server and tools', () => {
   it('creates server with expected tools', () => {
@@ -39,5 +39,13 @@ describe('MCP server and tools', () => {
     } finally {
       global.fetch = originalFetch;
     }
+  });
+
+  it('reduces client names and user agents to a coarse product label', () => {
+    expect(clientLabel('Claude-User/1.0 (+https://claude.ai)')).toBe('claude-user');
+    expect(clientLabel('openai-mcp/1.0.0')).toBe('openai-mcp');
+    expect(clientLabel('Visual Studio Code')).toBe('visual-studio-code');
+    expect(clientLabel('   ')).toBeUndefined();
+    expect(clientLabel(undefined)).toBeUndefined();
   });
 });
