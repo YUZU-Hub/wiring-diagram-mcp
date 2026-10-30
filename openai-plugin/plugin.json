@@ -1,0 +1,126 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "voltplan-wiring-diagrams",
+  "version": "1.0.0",
+  "description": "Size cables, fuses, batteries, solar and inverters for 12V/24V/48V DC systems and draw wiring diagrams.",
+  "author": {
+    "name": "YuzuHub UG (haftungsbeschränkt)",
+    "email": "info@yuzuhub.com",
+    "url": "https://voltplan.app"
+  },
+  "homepage": "https://voltplan.app/wiring-diagram-mcp",
+  "repository": "https://github.com/YUZU-Hub/wiring-diagram-mcp",
+  "license": "MIT",
+  "keywords": ["wiring diagram", "12V", "camper", "boat", "off-grid", "solar", "battery", "electrical"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "VoltPlan Wiring Diagrams",
+        "shortDescription": "12V wiring diagrams & sizing",
+        "longDescription": "Plan the low-voltage DC electrical system of a camper van, RV, boat or off-grid cabin. VoltPlan Wiring Diagrams sizes cables and fuses, battery banks, solar arrays, inverters and charging times for 12 V, 24 V and 48 V systems, and draws a wiring diagram of the system as an image.\n\nDescribe batteries, chargers and loads in plain language. Each result lists the inputs used, the calculated values and the sizing rules behind them, such as a 3% voltage-drop limit and fuses at 125% of the continuous current. A generated diagram comes with a link that opens it in the VoltPlan web editor for further editing.\n\nIntended for DIY builders and installers planning DC systems. Limitations: covers low-voltage DC systems only, not residential AC wiring, breaker panels or three-phase systems. Results are planning aids and do not replace an inspection by a qualified electrician.",
+        "developerName": "YuzuHub UG (haftungsbeschränkt)",
+        "category": "Productivity",
+        "capabilities": [
+          "Generate wiring diagrams",
+          "Size cables and fuses",
+          "Size battery banks",
+          "Size solar arrays",
+          "Size inverters",
+          "Estimate charging time",
+          "Build power budgets"
+        ],
+        "websiteURL": "https://voltplan.app/wiring-diagram-mcp",
+        "supportURL": "https://voltplan.app/contact",
+        "privacyPolicyURL": "https://voltplan.app/privacy",
+        "termsOfServiceURL": "https://voltplan.app/mcp-terms",
+        "defaultPrompt": [
+          "Draw a wiring diagram for my camper: 100Ah LiFePO4 battery, 400 W solar, a 60 W fridge and LED lights.",
+          "What wire size and fuse do I need for a 2000 W inverter on 12 V with a 1.5 m cable run?",
+          "How do I wire 12.8 V 100Ah batteries to get a 24 V 200Ah bank?"
+        ],
+        "brandColor": "#059669",
+        "brandColorDark": "#10B981",
+        "composerIcon": "./assets/logo.png",
+        "logo": "./assets/logo.png"
+      },
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Generate a wiring diagram for a small camper system",
+              "prompt": "Draw a wiring diagram for my camper: one 100Ah LiFePO4 battery (12.8 V), a 400 W solar panel with an MPPT controller, a 60 W fridge and 20 W of LED lights.",
+              "tools_triggered": "generate_wiring_diagram",
+              "expected_behavior": "Returns a PNG wiring diagram with the battery, the MPPT solar charger and both loads; shunt, main switch and low-voltage cutoff are added automatically. The text lists the system and a link that opens the diagram in the VoltPlan web editor."
+            },
+            {
+              "description": "Size the cable and fuse for an inverter",
+              "prompt": "What wire size and fuse do I need for a 2000 W inverter on a 12 V system with a 1.5 m cable run?",
+              "tools_triggered": "calculate_wire_gauge",
+              "expected_behavior": "Calculates about 167 A and recommends 70 mm² (0 AWG) cable with about 1.1% voltage drop and a 250 A Class T fuse installed close to the battery positive terminal; status OK."
+            },
+            {
+              "description": "Build a power budget and size the battery bank",
+              "prompt": "My van has a 60 W fridge running 24 hours, 20 W of lights for 5 hours and a 65 W laptop for 3 hours a day. How big a 12 V lithium bank of 100Ah 12.8 V batteries do I need for 2 days without charging?",
+              "tools_triggered": "calculate_power_budget, calculate_battery_bank",
+              "expected_behavior": "Power budget of 1735 Wh/day (145 W peak); battery bank of at least 361.5 Ah at 80% depth of discharge, recommended as 4 × 100Ah in parallel (400 Ah, about 2.4 days of autonomy)."
+            },
+            {
+              "description": "Size a solar array",
+              "prompt": "How many watts of solar panels do I need to cover 1500 Wh per day with 4 peak sun hours?",
+              "tools_triggered": "calculate_solar_size",
+              "expected_behavior": "Recommends about 441 W of solar after 85% system efficiency (375 W ideal) and lists panel combinations such as 3 × 160 W or 2 × 300 W."
+            },
+            {
+              "description": "Plan a series/parallel battery configuration",
+              "prompt": "How do I wire 12.8 V 100Ah batteries to get a 24 V 200Ah battery bank?",
+              "tools_triggered": "calculate_battery_config",
+              "expected_behavior": "Recommends a 2S2P configuration of 4 batteries (25.6 V, 200 Ah, 5120 Wh) with step-by-step wiring instructions and safety notes."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Residential AC wiring is out of scope: the tools cover low-voltage DC systems only, so the assistant should explain that and not call a tool.",
+              "prompt": "Design the 230 V breaker panel and circuit layout for my house."
+            },
+            {
+              "description": "The plugin cannot buy products or place orders; the assistant should say so instead of calling a tool.",
+              "prompt": "Order a 200Ah LiFePO4 battery for me on Amazon."
+            },
+            {
+              "description": "Unrelated request with no electrical planning task; no tool should be called.",
+              "prompt": "Write a short poem about sailing."
+            }
+          ]
+        },
+        "commerce": false,
+        "commerce_description": "The plugin does not sell products, process payments or link to checkout pages."
+      },
+      "publication": {
+        "countries": [],
+        "release_notes": "Initial release: nine read-only tools that size and diagram low-voltage DC systems for campers, boats and off-grid cabins.",
+        "translations": {
+          "de-DE": {
+            "subtitle": "12V-Schaltpläne & Bemessung",
+            "description": "Planen Sie die Gleichstrom-Niedervoltanlage von Camper, Wohnmobil, Boot oder Off-Grid-Hütte. VoltPlan Wiring Diagrams bemisst Kabel und Sicherungen, Batteriebänke, Solaranlagen, Wechselrichter und Ladezeiten für 12-V-, 24-V- und 48-V-Systeme und zeichnet einen Schaltplan der Anlage als Bild.\n\nBeschreiben Sie Batterien, Ladegeräte und Verbraucher in natürlicher Sprache. Jedes Ergebnis nennt die verwendeten Eingaben, die berechneten Werte und die zugrunde liegenden Bemessungsregeln, etwa höchstens 3 % Spannungsabfall und Sicherungen bei 125 % des Dauerstroms. Ein erzeugter Schaltplan enthält einen Link, der ihn im VoltPlan-Webeditor zur weiteren Bearbeitung öffnet.\n\nFür Selbstausbauer und Installateure, die Gleichstromanlagen planen. Einschränkungen: nur Gleichstrom-Niedervoltanlagen, keine Hausinstallation mit Wechselstrom, keine Sicherungskästen, kein Drehstrom. Die Ergebnisse sind Planungshilfen und ersetzen nicht die Prüfung durch eine Elektrofachkraft."
+          },
+          "fr-FR": {
+            "subtitle": "Schémas 12 V et calculs",
+            "description": "Planifiez l’installation électrique basse tension en courant continu d’un van, camping-car, bateau ou chalet autonome. VoltPlan Wiring Diagrams dimensionne câbles et fusibles, parcs de batteries, installations solaires, onduleurs et temps de charge pour les systèmes 12 V, 24 V et 48 V, et dessine le schéma électrique de l’installation sous forme d’image.\n\nDécrivez batteries, chargeurs et consommateurs en langage courant. Chaque résultat indique les données utilisées, les valeurs calculées et les règles de dimensionnement appliquées, par exemple une chute de tension limitée à 3 % et des fusibles à 125 % du courant continu. Un schéma généré est accompagné d’un lien qui l’ouvre dans l’éditeur web VoltPlan pour le modifier.\n\nDestiné aux bricoleurs et installateurs qui planifient des systèmes en courant continu. Limites : uniquement les systèmes basse tension en courant continu, pas l’installation électrique domestique en courant alternatif, les tableaux électriques ou le triphasé. Les résultats sont des aides à la planification et ne remplacent pas le contrôle par un électricien qualifié."
+          },
+          "nl-NL": {
+            "subtitle": "12V-schema's & dimensionering",
+            "description": "Plan de laagspannings-gelijkstroominstallatie van een camperbus, camper, boot of off-grid huisje. VoltPlan Wiring Diagrams dimensioneert kabels en zekeringen, accubanken, zonnepanelen, omvormers en laadtijden voor 12V-, 24V- en 48V-systemen en tekent een bedradingsschema van het systeem als afbeelding.\n\nBeschrijf accu's, laders en verbruikers in gewone taal. Elk resultaat toont de gebruikte invoer, de berekende waarden en de dimensioneringsregels daarachter, zoals maximaal 3% spanningsverlies en zekeringen op 125% van de continue stroom. Een gegenereerd schema bevat een link die het in de VoltPlan-webeditor opent om verder te bewerken.\n\nBedoeld voor doe-het-zelvers en installateurs die gelijkstroomsystemen plannen. Beperkingen: alleen laagspannings-gelijkstroomsystemen, geen huisinstallaties op wisselstroom, groepenkasten of driefasesystemen. De resultaten zijn planningshulpmiddelen en vervangen geen controle door een erkend elektricien."
+          },
+          "it-IT": {
+            "subtitle": "Schemi 12V e dimensionamento",
+            "description": "Pianifica l’impianto elettrico in corrente continua a bassa tensione di un van, camper, barca o baita off-grid. VoltPlan Wiring Diagrams dimensiona cavi e fusibili, banchi batteria, impianti solari, inverter e tempi di ricarica per sistemi a 12 V, 24 V e 48 V e disegna lo schema elettrico dell’impianto come immagine.\n\nDescrivi batterie, caricabatterie e utenze in linguaggio naturale. Ogni risultato riporta i dati utilizzati, i valori calcolati e le regole di dimensionamento applicate, ad esempio una caduta di tensione massima del 3% e fusibili al 125% della corrente continuativa. Uno schema generato include un link che lo apre nell’editor web di VoltPlan per ulteriori modifiche.\n\nPensato per chi costruisce in proprio e per installatori che progettano impianti in corrente continua. Limiti: solo impianti in corrente continua a bassa tensione, non impianti domestici in corrente alternata, quadri elettrici o sistemi trifase. I risultati sono strumenti di pianificazione e non sostituiscono la verifica da parte di un elettricista qualificato."
+          },
+          "es-ES": {
+            "subtitle": "Esquemas 12 V y cálculo",
+            "description": "Planifica la instalación eléctrica de baja tensión en corriente continua de una furgoneta camper, autocaravana, barco o cabaña aislada. VoltPlan Wiring Diagrams dimensiona cables y fusibles, bancos de baterías, instalaciones solares, inversores y tiempos de carga para sistemas de 12 V, 24 V y 48 V, y dibuja el esquema eléctrico del sistema como imagen.\n\nDescribe baterías, cargadores y consumidores en lenguaje natural. Cada resultado indica los datos utilizados, los valores calculados y las reglas de dimensionado aplicadas, como una caída de tensión máxima del 3 % y fusibles al 125 % de la corriente continua. Un esquema generado incluye un enlace que lo abre en el editor web de VoltPlan para seguir editándolo.\n\nPensado para aficionados e instaladores que planifican sistemas de corriente continua. Limitaciones: solo sistemas de baja tensión en corriente continua, no instalaciones domésticas de corriente alterna, cuadros eléctricos ni sistemas trifásicos. Los resultados son ayudas de planificación y no sustituyen la revisión por un electricista cualificado."
+          }
+        }
+      }
+    }
+  }
+}

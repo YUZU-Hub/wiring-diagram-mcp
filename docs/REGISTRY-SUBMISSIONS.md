@@ -77,6 +77,14 @@ claude mcp add wiring-diagram --transport http https://mcp.voltplan.app/mcp
       Privacy policy: https://voltplan.app/privacy#mcp · Docs: https://voltplan.app/wiring-diagram-mcp ·
       Support: info@yuzuhub.com. The server needs no auth, so there is no test account to hand over;
       give at least three example prompts from `examples/`.
+- [ ] **OpenAI plugin directory** (ChatGPT + Codex) — https://platform.openai.com/plugins
+      Package: `openai-plugin/` (plugin.json with listing, translations and the 5+3 review test cases;
+      mcp.json pointing at `/mcp-clean`, because the plugin guidelines forbid advertising).
+      Build the upload with `npm run openai-plugin:zip` → `openai-plugin.zip`. Prerequisites in the
+      OpenAI dashboard: business verification of YuzuHub UG, a project with global (not EU) data
+      residency. Domain verification serves the portal's token at
+      `https://mcp.voltplan.app/.well-known/openai-apps-challenge`. The demo video URL is entered in
+      the dashboard (Review details). Terms: https://voltplan.app/mcp-terms.
 
 ### Signal (off-platform, ongoing)
 - [ ] Stars matter: Glama and most aggregators rank by GitHub stars + recency. Currently 0 — seed via

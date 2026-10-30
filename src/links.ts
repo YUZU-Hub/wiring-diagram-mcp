@@ -130,8 +130,12 @@ export interface PrefillSystem {
  * VoltPlan `src/lib/editorDeepLink.ts`), so the link carries the first
  * battery, the first solar charger and the first load. `placed` lists what the
  * link covers, so the tool output can say what is left to add by hand.
+ * `attributed: false` leaves out the `utm_*` analytics parameters.
  */
-export function editorPrefillLink(system: PrefillSystem): { url: string; placed: string[]; notPlaced: string[] } {
+export function editorPrefillLink(
+  system: PrefillSystem,
+  attributed = true,
+): { url: string; placed: string[]; notPlaced: string[] } {
   const params: Params = {};
   const placed: string[] = [];
   const notPlaced: string[] = [];
@@ -165,5 +169,6 @@ export function editorPrefillLink(system: PrefillSystem): { url: string; placed:
   }
   notPlaced.push(...otherLoads.map((l) => l.name));
 
-  return { url: siteUrl('/wireframe/new', params), placed, notPlaced };
+  const url = attributed ? siteUrl('/wireframe/new', params) : withParams(new URL('/wireframe/new', SITE_URL), params);
+  return { url, placed, notPlaced };
 }

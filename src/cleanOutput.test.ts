@@ -71,8 +71,10 @@ describe('promotional output', () => {
     expect(text).not.toContain('/api/go');
     expect(text).not.toMatch(/\[VoltPlan [^\]]+\]/);
     expect(text).not.toMatch(/shopping list|Component Catalog|Show the user/i);
-    // The editor link is the diagram's own editable copy, not a promotion.
+    // The editor link is the diagram's own editable copy, not a promotion,
+    // and carries no analytics parameters.
     expect(text).toContain('/wireframe/new');
+    expect(text).not.toContain('utm_');
   });
 
   it('the default server keeps its buy links and VoltPlan links', async () => {

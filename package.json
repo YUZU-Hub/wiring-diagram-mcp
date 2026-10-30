@@ -29,7 +29,8 @@
     "dev": "tsx src/index.ts",
     "dev:http": "tsx src/index.ts --http",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "openai-plugin:zip": "rm -f openai-plugin.zip && cd openai-plugin && zip -r -X ../openai-plugin.zip plugin.json mcp.json assets"
   },
   "keywords": [
     "mcp",

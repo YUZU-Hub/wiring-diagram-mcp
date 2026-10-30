@@ -186,7 +186,7 @@ export function createServer(ctx: { ua?: string; clean?: boolean } = {}): McpSer
         };
       }
 
-      const editor = editorPrefillLink(request);
+      const editor = editorPrefillLink(request, !clean);
       const summary = [
         `Wiring diagram for "${request.systemName}": ${request.batteries.length} battery/batteries, ${request.chargers.length} charger(s), ${request.loads.length} load(s).`,
         request.batteries.length > 0 && request.loads.length > 0

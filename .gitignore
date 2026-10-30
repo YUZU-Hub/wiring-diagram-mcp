@@ -2,3 +2,4 @@ node_modules/
 dist/
 *.tsbuildinfo
 .mcpregistry_*
+openai-plugin.zip
