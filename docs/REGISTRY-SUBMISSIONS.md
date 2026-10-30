@@ -70,6 +70,13 @@ claude mcp add wiring-diagram --transport http https://mcp.voltplan.app/mcp
 - [ ] **mcpservers.org** — https://mcpservers.org — submit via their GitHub PR flow.
 - [ ] **Docker MCP Catalog** (optional) — repo already ships a `Dockerfile`; submit if you want the
       Docker Desktop MCP toolkit listing.
+- [ ] **Anthropic connector directory** (Claude) — https://claude.com/docs/connectors/building/submission
+      Submit `https://mcp.voltplan.app/mcp-clean`, not `/mcp`: the
+      [Software Directory Policy](https://support.claude.com/en/articles/13145358-anthropic-software-directory-policy)
+      §4C rejects advertisements and sponsored content, and `/mcp` returns Amazon affiliate links.
+      Privacy policy: https://voltplan.app/privacy#mcp · Docs: https://voltplan.app/wiring-diagram-mcp ·
+      Support: info@yuzuhub.com. The server needs no auth, so there is no test account to hand over;
+      give at least three example prompts from `examples/`.
 
 ### Signal (off-platform, ongoing)
 - [ ] Stars matter: Glama and most aggregators rank by GitHub stars + recency. Currently 0 — seed via

@@ -188,9 +188,11 @@ Calculations run inside the MCP server and are deterministic. Diagram rendering 
 
 Buy links go through `voltplan.app/api/go` with `source=mcp`, which picks the reader's local Amazon store; VoltPlan earns a commission on purchases (Amazon Associate). Links to voltplan.app pages carry `utm_source=mcp`.
 
+`https://mcp.voltplan.app/mcp-clean` serves the same tools without buy links and without pointers to other VoltPlan pages (tool descriptions included). Use it where tool output must not carry promotional content, e.g. Anthropic's connector directory. The diagram's editor link stays, because it opens the generated system for editing.
+
 ## Telemetry
 
-The server sends anonymous usage events to VoltPlan's cookieless analytics (Umami): connection handshakes and tool calls, with the tool name, a few coarse inputs (system voltage, output format) and the client's product name (e.g. `claude-ai`, from the MCP `clientInfo` or the HTTP User-Agent). No prompts, no tool arguments beyond those, no IP-derived identifiers. Set `VOLTPLAN_TELEMETRY=off` to disable it.
+The server sends anonymous usage events to VoltPlan's cookieless analytics (Umami): connection handshakes and tool calls, with the tool name, a few coarse inputs (system voltage, output format) and the client's product name (e.g. `claude-ai`, from the MCP `clientInfo` or the HTTP User-Agent). No prompts, no tool arguments beyond those, no IP-derived identifiers. Events record the endpoint as their page (`/mcp` or `/mcp-clean`). Set `VOLTPLAN_TELEMETRY=off` to disable it.
 
 ## Examples
 
