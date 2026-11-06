@@ -13,6 +13,14 @@ import {
 } from './electricalCalculators.js';
 import { normalizeDiagramInput, stripEmbeddedImages } from './diagramInput.js';
 import {
+  COMPONENT_CATEGORIES,
+  VOLTPLAN_API_URL,
+  fetchBom,
+  fetchComponentMatches,
+  formatBom,
+  formatComponentMatches,
+} from './catalog.js';
+import {
   bomBuyUrl,
   buySearchUrl,
   editorPrefillLink,
@@ -21,11 +29,10 @@ import {
   siteUrl,
 } from './links.js';
 
-export const SERVER_VERSION = '0.3.0';
+export const SERVER_VERSION = '0.4.0';
 /** Endpoint serving the tools without promotional output (see createServer). */
 export const CLEAN_PATH = '/mcp-clean';
 
-const VOLTPLAN_API_URL = process.env.VOLTPLAN_API_URL || 'https://voltplan.app';
 const UMAMI_URL = process.env.UMAMI_URL || 'https://umami.yuzu.chat';
 const UMAMI_WEBSITE_ID = process.env.UMAMI_WEBSITE_ID || '0e838cbf-d608-4400-b2c7-4557f2613cec';
 const TELEMETRY_OFF = /^(0|off|false|no)$/i.test(process.env.VOLTPLAN_TELEMETRY ?? '');
@@ -59,6 +66,48 @@ const CALCULATOR_ANNOTATIONS = {
   idempotentHint: true,
   openWorldHint: false,
 } as const;
+
+/** The system `generate_wiring_diagram` draws and `build_bom` lists the parts for. */
+const DIAGRAM_SYSTEM_SCHEMA = z.object({
+  systemName: z.string().describe('Name of the electrical system (e.g. "My Camper Van")'),
+  batteries: z
+    .array(
+      z.object({
+        name: z.string().describe('Battery name (e.g. "LiFePO4 100Ah")'),
+        voltage: z.number().describe('Nominal voltage (e.g. 12, or 12.8 for LiFePO4)'),
+        capacityAh: z.number().optional().describe('Capacity in amp-hours. Give this or energyWh.'),
+        energyWh: z.number().optional().describe('Energy in watt-hours. Calculated from capacityAh × voltage when omitted.'),
+      })
+    )
+    .optional()
+    .describe('Batteries in the system'),
+  loads: z
+    .array(
+      z.object({
+        name: z.string().describe('Load name (e.g. "LED Lights")'),
+        power: z.number().optional().describe('Power consumption in watts. Give this or current.'),
+        current: z.number().optional().describe('Current draw in amps. Calculated from power / voltage when omitted.'),
+        voltage: z.number().optional().describe('Operating voltage. Defaults to the first battery\'s voltage (or 12 V).'),
+      })
+    )
+    .optional()
+    .describe('Electrical loads / consumers'),
+  chargers: z
+    .array(
+      z.object({
+        name: z.string().describe('Charger name (e.g. "MPPT Solar Charger")'),
+        inputVoltage: z.number().describe('Input voltage. For shore/generator (AC) chargers use the regional mains voltage: 230 V in Europe, UK, Australia, most of Asia and Africa; 120 V in North America and Japan. For solar/wind use the panel or turbine output voltage. For alternator use the vehicle system voltage (typically 14 V).'),
+        outputVoltage: z.number().optional().describe('Output voltage. Defaults to the first battery\'s voltage (or 12 V).'),
+        power: z.number().describe('Power rating in watts'),
+        sourceType: z
+          .enum(['shore', 'solar', 'wind', 'generator', 'alternator'])
+          .optional()
+          .describe('Type of power source feeding this charger'),
+      })
+    )
+    .optional()
+    .describe('Chargers with their power sources'),
+});
 
 /**
  * Coarse client label for usage events: the MCP client name (stdio) or the
@@ -108,45 +157,7 @@ export function createServer(ctx: { ua?: string; clean?: boolean } = {}): McpSer
           'Returns the schematic as an image (batteries, chargers, protection components, loads) and a link that opens it in the VoltPlan editor to refine, save and turn into a shopping list. ' +
           'Protection components (shunt, main switch, low-voltage cutoff) are auto-generated when both batteries and loads are provided. ' +
           'Show the user the editor link.',
-      inputSchema: z.object({
-        systemName: z.string().describe('Name of the electrical system (e.g. "My Camper Van")'),
-        batteries: z
-          .array(
-            z.object({
-              name: z.string().describe('Battery name (e.g. "LiFePO4 100Ah")'),
-              voltage: z.number().describe('Nominal voltage (e.g. 12, or 12.8 for LiFePO4)'),
-              capacityAh: z.number().optional().describe('Capacity in amp-hours. Give this or energyWh.'),
-              energyWh: z.number().optional().describe('Energy in watt-hours. Calculated from capacityAh × voltage when omitted.'),
-            })
-          )
-          .optional()
-          .describe('Batteries in the system'),
-        loads: z
-          .array(
-            z.object({
-              name: z.string().describe('Load name (e.g. "LED Lights")'),
-              power: z.number().optional().describe('Power consumption in watts. Give this or current.'),
-              current: z.number().optional().describe('Current draw in amps. Calculated from power / voltage when omitted.'),
-              voltage: z.number().optional().describe('Operating voltage. Defaults to the first battery\'s voltage (or 12 V).'),
-            })
-          )
-          .optional()
-          .describe('Electrical loads / consumers'),
-        chargers: z
-          .array(
-            z.object({
-              name: z.string().describe('Charger name (e.g. "MPPT Solar Charger")'),
-              inputVoltage: z.number().describe('Input voltage. For shore/generator (AC) chargers use the regional mains voltage: 230 V in Europe, UK, Australia, most of Asia and Africa; 120 V in North America and Japan. For solar/wind use the panel or turbine output voltage. For alternator use the vehicle system voltage (typically 14 V).'),
-              outputVoltage: z.number().optional().describe('Output voltage. Defaults to the first battery\'s voltage (or 12 V).'),
-              power: z.number().describe('Power rating in watts'),
-              sourceType: z
-                .enum(['shore', 'solar', 'wind', 'generator', 'alternator'])
-                .optional()
-                .describe('Type of power source feeding this charger'),
-            })
-          )
-          .optional()
-          .describe('Chargers with their power sources'),
+      inputSchema: DIAGRAM_SYSTEM_SCHEMA.extend({
         format: z
           .enum(['png', 'svg'])
           .default('png')
@@ -196,6 +207,7 @@ export function createServer(ctx: { ua?: string; clean?: boolean } = {}): McpSer
         editor.placed.length > 0 ? `The link places ${editor.placed.join(', ')}.` : '',
         editor.notPlaced.length > 0 ? `Add the remaining components in the editor: ${editor.notPlaced.join(', ')}.` : '',
         ...promo('In the editor the user can save the plan, export a PDF and get a shopping list for every part.'),
+        'Use build_bom to list every part of this system: components, cable per gauge with lengths, fuses, terminals and tools.',
       ].filter(Boolean).join('\n');
 
       if (format === 'png') {
@@ -215,6 +227,94 @@ export function createServer(ctx: { ua?: string; clean?: boolean } = {}): McpSer
           { type: 'text' as const, text: summary },
         ],
       };
+    }
+  );
+
+  server.registerTool(
+    'find_components',
+    {
+      title: 'Find Components',
+      description:
+        (clean
+          ? 'Find real products in VoltPlan\'s curated product catalogue that match a spec, '
+          : 'Find real products in VoltPlan\'s curated component catalogue that match a spec, ') +
+        'e.g. a 200 Ah 12 V LiFePO4 battery or a 2000 W pure-sine inverter. Results come closest rating first. ' +
+        'The catalogue is small and curated, so results may deviate from the requested spec; check the listed specs. ' +
+        'Use it after the calculators (calculate_battery_bank, calculate_solar_size, calculate_inverter_size) have sized the part.' +
+        (clean
+          ? ' Returns product names, key specs and review ratings.'
+          : ' Returns product pages and buy links for each product; show them to the user.'),
+      inputSchema: z.object({
+        category: z
+          .enum(COMPONENT_CATEGORIES)
+          .describe(
+            'Kind of product: battery, solar_panel, solar_charge_controller (MPPT/PWM), dc_dc_charger (alternator / B2B charger), ' +
+              'ac_charger (shore / mains battery charger), inverter (incl. inverter-chargers), power_station (portable power station), ' +
+              'battery_monitor (shunt / battery monitor), appliance (loads such as fridges, heaters, fans)'
+          ),
+        systemVoltage: z
+          .union([z.literal(12), z.literal(24), z.literal(48)])
+          .optional()
+          .describe('System (battery bank) voltage: 12, 24 or 48. Leaves out products built for another voltage. Ignored for solar_panel, power_station and battery_monitor.'),
+        powerWatts: z
+          .number()
+          .positive()
+          .optional()
+          .describe('Target power rating in watts: inverter continuous W, charger or controller output W, panel W, power station AC output W, appliance W. Ranks results; not used for batteries.'),
+        capacityAh: z.number().positive().optional().describe('Batteries only: target capacity in amp-hours. Ranks results.'),
+        capacityWh: z
+          .number()
+          .positive()
+          .optional()
+          .describe('Batteries and power stations: target energy in watt-hours. Ranks results; for batteries capacityAh wins when both are given.'),
+        pureSine: z.boolean().optional().describe('true: only pure sine wave products (inverter, power_station).'),
+        query: z
+          .string()
+          .max(100)
+          .optional()
+          .describe('Free-text filter; every word must appear in the product (e.g. "LiFePO4", "Victron").'),
+        limit: z.number().int().min(1).max(10).default(5).describe('Maximum number of products to return (1-10, default: 5)'),
+      }),
+      annotations: { ...CALCULATOR_ANNOTATIONS, openWorldHint: true },
+    },
+    async (args) => {
+      trackTool('find_components', { category: args.category });
+      const outcome = await fetchComponentMatches(args);
+      if ('error' in outcome) {
+        return { isError: true, content: [{ type: 'text' as const, text: outcome.error }] };
+      }
+      return { content: [{ type: 'text' as const, text: formatComponentMatches(outcome.result, { clean }) }] };
+    }
+  );
+
+  server.registerTool(
+    'build_bom',
+    {
+      title: 'Build Shopping List',
+      description: clean
+        ? 'Build the bill of materials (parts list) for the same system generate_wiring_diagram takes: ' +
+          'components with matching catalogue products, cable per gauge with lengths, fuses, fuse holders, terminals and tools, ' +
+          'sized with the same rules as the diagram.'
+        : 'Build the shopping list (bill of materials) for the same system generate_wiring_diagram takes: ' +
+          'components with matching products from VoltPlan\'s catalogue, cable per gauge with lengths, fuses, fuse holders, terminals and tools, ' +
+          'sized with the same rules as the diagram. ' +
+          'Returns buy links for every line and a link that opens the system in the VoltPlan editor; show them to the user.',
+      inputSchema: DIAGRAM_SYSTEM_SCHEMA,
+      annotations: { ...CALCULATOR_ANNOTATIONS, openWorldHint: true },
+    },
+    async (args) => {
+      trackTool('build_bom');
+      const normalized = normalizeDiagramInput(args);
+      if ('error' in normalized) {
+        return { isError: true, content: [{ type: 'text' as const, text: normalized.error }] };
+      }
+      const { request } = normalized;
+      const outcome = await fetchBom(request);
+      if ('error' in outcome) {
+        return { isError: true, content: [{ type: 'text' as const, text: outcome.error }] };
+      }
+      const editorUrl = clean ? undefined : editorPrefillLink(request).url;
+      return { content: [{ type: 'text' as const, text: formatBom(outcome.result, { clean, editorUrl }) }] };
     }
   );
 
@@ -587,6 +687,7 @@ export function createServer(ctx: { ua?: string; clean?: boolean } = {}): McpSer
         ``,
         `## Next Steps`,
         `Use calculate_battery_config for detailed wiring instructions, or calculate_solar_size to size a solar array for this battery bank.`,
+        `Use find_components (category battery) to pick a ${args.singleBatteryAh} Ah battery.`,
       ].join('\n');
 
       return { content: [{ type: 'text' as const, text }] };
@@ -647,6 +748,7 @@ export function createServer(ctx: { ua?: string; clean?: boolean } = {}): McpSer
         `- Panels mounted flat on a roof typically get 10-20% less than optimally tilted panels.`,
         `- Partial shading can dramatically reduce output. Even small shadows on one cell can reduce the output of an entire panel.`,
         `- In cloudy or winter conditions, consider supplementing solar with shore power or an alternator charger.`,
+        `- Use find_components (category solar_panel, or solar_charge_controller for the MPPT controller) to pick matching products.`,
       ].join('\n');
       return { content: [{ type: 'text' as const, text }] };
     }
@@ -771,6 +873,7 @@ export function createServer(ctx: { ua?: string; clean?: boolean } = {}): McpSer
         `- Modified sine wave inverters are cheaper but may cause humming in motors and are unsuitable for some devices.`,
         `- The DC current draw determines the cable size and fuse needed between battery and inverter — use calculate_wire_gauge to size these.`,
         `- Keep the cable between battery and inverter as short as possible (ideally under 1.5 m) due to the high DC current.`,
+        `- Use find_components (category inverter, pure sine) to pick a ${result.recommendedInverterSize} W inverter.`,
       ].join('\n');
 
       return { content: [{ type: 'text' as const, text }] };

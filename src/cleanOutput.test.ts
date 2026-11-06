@@ -20,10 +20,18 @@ const TOOL_ARGS: Record<string, Record<string, unknown>> = {
   calculate_charging_time: { batteryCapacityAh: 200, batteryVoltage: 12, currentStateOfChargePercent: 20, chargePowerWatts: 400 },
   calculate_inverter_size: { systemVoltage: 12, loads: [{ name: 'Kettle', continuousWatts: 1500 }] },
   calculate_battery_config: { targetVoltage: 24, targetCapacityAh: 200, singleBatteryVoltage: 12.8, singleBatteryAh: 100 },
+  find_components: { category: 'battery', systemVoltage: 12, capacityAh: 100 },
+  build_bom: {
+    systemName: 'Camper',
+    batteries: [{ name: 'LiFePO4 100Ah', voltage: 12.8, capacityAh: 100 }],
+    loads: [{ name: 'Fridge', power: 60 }],
+  },
 };
 
 // Diagram API answers with a tiny PNG; the curated-parts catalogue has no rows,
-// so buy links fall back to search links; telemetry is swallowed.
+// so buy links fall back to search links; the product catalogue and the
+// shopping list answer with one product each; telemetry is swallowed.
+const PRODUCT = { name: 'Power Queen 12V 100Ah', url: 'https://voltplan.app/components/power-queen-100ah' };
 function fakeFetch(url: string | URL | Request): Promise<Response> {
   const href = String(url);
   if (href.includes('/api/diagram/generate')) {
@@ -31,6 +39,32 @@ function fakeFetch(url: string | URL | Request): Promise<Response> {
   }
   if (href.includes('/api/collections/')) {
     return Promise.resolve(Response.json({ items: [] }));
+  }
+  if (href.includes('/api/components/match')) {
+    return Promise.resolve(Response.json({
+      category: 'battery',
+      items: [{ id: 'pq100', ...PRODUCT, buyUrl: 'https://voltplan.app/api/go?c=pq100&source=mcp', capacityAh: 100, systemVoltage: 12 }],
+      totalMatches: 1,
+      searchQuery: '100Ah LiFePO4 12V battery',
+      searchUrl: 'https://voltplan.app/api/go?q=100Ah%20LiFePO4%2012V%20battery&component_type=battery&source=mcp',
+    }));
+  }
+  if (href.includes('/api/diagram/bom')) {
+    return Promise.resolve(Response.json({
+      systemName: 'Camper',
+      sections: [{
+        title: 'Components',
+        items: [{
+          id: 'battery-0',
+          name: 'LiFePO4 100Ah',
+          spec: '12 V · 100 Ah',
+          quantity: '× 1',
+          product: { id: 'pq100', ...PRODUCT },
+          links: [{ label: null, url: 'https://voltplan.app/api/go?c=pq100&source=mcp' }],
+        }],
+      }],
+      notes: ['Check product specs before buying.'],
+    }));
   }
   return Promise.resolve(new Response('{}', { status: 200 }));
 }

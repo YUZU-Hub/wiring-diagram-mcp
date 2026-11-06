@@ -25,7 +25,7 @@ The calculations are the same ones any cruiser or vanlifer ends up doing on grap
 
 ## What it does
 
-Nine tools, all callable by name from any MCP client:
+Eleven tools, all callable by name from any MCP client:
 
 | Tool | What it does |
 |---|---|
@@ -38,6 +38,8 @@ Nine tools, all callable by name from any MCP client:
 | `calculate_charging_time` | Time from X% to Y% SoC, with bulk and absorption phases |
 | `generate_wiring_diagram` | Complete schematic as an image (PNG, default) or icon-free SVG, auto-fused and protected, plus a link that opens the system in the VoltPlan editor |
 | `list_component_types` | Component reference and example configs for diagram building |
+| `find_components` | Real products from VoltPlan's curated catalogue that match a spec (category, system voltage, watts, Ah/Wh, pure sine), closest rating first, with product page and buy links |
+| `build_bom` | Shopping list for the same system the diagram takes: components with matching catalogue products, cable per gauge with lengths, fuses, fuse holders, terminals and tools, sized like the diagram |
 
 ## Demo
 
@@ -166,7 +168,7 @@ npm run start:http   # listens on http://localhost:3001/mcp
 
 | Env var | Default | Purpose |
 |---|---|---|
-| `VOLTPLAN_API_URL` | `https://voltplan.app` | VoltPlan instance for diagram rendering |
+| `VOLTPLAN_API_URL` | `https://voltplan.app` | VoltPlan instance for diagram rendering, catalogue matches (`find_components`) and shopping lists (`build_bom`) |
 | `VOLTPLAN_PB_URL` | `https://base.voltplan.app` | VoltPlan catalogue (public, read-only) for curated cable and fuse links |
 | `VOLTPLAN_TELEMETRY` | on | `off` disables the usage events described under [Telemetry](#telemetry) |
 | `PORT` | `3001` | HTTP server port |
@@ -182,17 +184,17 @@ docker run -p 3001:3001 wiring-diagram-mcp
 
 ![Architecture](./docs/architecture.svg)
 
-Calculations run inside the MCP server and are deterministic. Diagram rendering hits the VoltPlan API and returns a PNG (or SVG) that the AI client shows in the chat. `calculate_wire_gauge` additionally reads VoltPlan's public catalogue (cached for an hour) to link the recommended cable and fuse to a curated product; without it the links fall back to a store search.
+Calculations run inside the MCP server and are deterministic. Diagram rendering hits the VoltPlan API and returns a PNG (or SVG) that the AI client shows in the chat. `find_components` and `build_bom` call VoltPlan's public `/api/components/match` and `/api/diagram/bom` endpoints; the shopping list is sized by the same code that renders the diagram. `calculate_wire_gauge` additionally reads VoltPlan's public catalogue (cached for an hour) to link the recommended cable and fuse to a curated product; without it the links fall back to a store search.
 
 ### Links and attribution
 
 Buy links go through `voltplan.app/api/go` with `source=mcp`, which picks the reader's local Amazon store; VoltPlan earns a commission on purchases (Amazon Associate). Links to voltplan.app pages carry `utm_source=mcp`.
 
-`https://mcp.voltplan.app/mcp-clean` serves the same tools without buy links and without pointers to other VoltPlan pages (tool descriptions included). Use it where tool output must not carry promotional content, e.g. Anthropic's connector directory. The diagram's editor link stays, because it opens the generated system for editing.
+`https://mcp.voltplan.app/mcp-clean` serves the same tools without buy links and without pointers to other VoltPlan pages (tool descriptions included). Use it where tool output must not carry promotional content, e.g. Anthropic's connector directory. The diagram's editor link stays, because it opens the generated system for editing. `find_components` and `build_bom` return no links at all there: product names, specs, quantities and ratings only.
 
 ## Telemetry
 
-The server sends anonymous usage events to VoltPlan's cookieless analytics (Umami): connection handshakes and tool calls, with the tool name, a few coarse inputs (system voltage, output format) and the client's product name (e.g. `claude-ai`, from the MCP `clientInfo` or the HTTP User-Agent). No prompts, no tool arguments beyond those, no IP-derived identifiers. Events record the endpoint as their page (`/mcp` or `/mcp-clean`). Set `VOLTPLAN_TELEMETRY=off` to disable it.
+The server sends anonymous usage events to VoltPlan's cookieless analytics (Umami): connection handshakes and tool calls, with the tool name, a few coarse inputs (system voltage, output format, product category) and the client's product name (e.g. `claude-ai`, from the MCP `clientInfo` or the HTTP User-Agent). No prompts, no tool arguments beyond those, no IP-derived identifiers. Events record the endpoint as their page (`/mcp` or `/mcp-clean`). Set `VOLTPLAN_TELEMETRY=off` to disable it.
 
 ## Examples
 
