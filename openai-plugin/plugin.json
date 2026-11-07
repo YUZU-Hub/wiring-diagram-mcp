@@ -27,7 +27,9 @@
           "Size solar arrays",
           "Size inverters",
           "Estimate charging time",
-          "Build power budgets"
+          "Build power budgets",
+          "Find matching products",
+          "Build parts lists"
         ],
         "websiteURL": "https://voltplan.app/wiring-diagram-mcp",
         "supportURL": "https://voltplan.app/contact",
@@ -75,6 +77,18 @@
               "prompt": "How do I wire 12.8 V 100Ah batteries to get a 24 V 200Ah battery bank?",
               "tools_triggered": "calculate_battery_config",
               "expected_behavior": "Recommends a 2S2P configuration of 4 batteries (25.6 V, 200 Ah, 5120 Wh) with step-by-step wiring instructions and safety notes."
+            },
+            {
+              "description": "Find catalogue products for a sized component",
+              "prompt": "Find a 200Ah 12 V LiFePO4 battery for my van.",
+              "tools_triggered": "find_components",
+              "expected_behavior": "Lists batteries from VoltPlan's curated catalogue for a 12 V system, closest to 200 Ah first, with their key specs and review ratings; no links."
+            },
+            {
+              "description": "Build the parts list for a camper system",
+              "prompt": "What parts do I need to buy to build this camper system: one 100Ah LiFePO4 battery (12.8 V), a 400 W solar panel with an MPPT controller and a 60 W fridge?",
+              "tools_triggered": "build_bom",
+              "expected_behavior": "Returns a bill of materials grouped into components, materials and tools: the battery, solar panel and charge controller (with a matching catalogue product where one fits), battery cable per gauge with lengths, fuses, fuse holders and terminals, the crimping tools, and planning notes; no links."
             }
           ],
           "negative": [
@@ -97,7 +111,7 @@
       },
       "publication": {
         "countries": [],
-        "release_notes": "Initial release: nine read-only tools that size and diagram low-voltage DC systems for campers, boats and off-grid cabins.",
+        "release_notes": "Initial release: eleven read-only tools that size, diagram and list the parts of low-voltage DC systems for campers, boats and off-grid cabins.",
         "translations": {
           "de-DE": {
             "subtitle": "12V-Schaltpläne & Bemessung",
