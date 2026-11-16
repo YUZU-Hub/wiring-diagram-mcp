@@ -185,7 +185,7 @@ export function fetchBom(request: DiagramRequest, fetchImpl: typeof fetch = fetc
 // ── Formatting ─────────────────────────────────────────────────────────
 
 /** A voltplan.app page from the API, re-pointed with the `utm_*` tags. */
-function pageUrl(url: string): string {
+export function pageUrl(url: string): string {
   try {
     return siteUrl(new URL(url).pathname);
   } catch {

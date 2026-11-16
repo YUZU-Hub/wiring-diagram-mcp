@@ -1,6 +1,6 @@
 {
   "name": "wiring-diagram-mcp",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "MCP server that generates 12V/24V/48V wiring diagrams and sizes wires, fuses, batteries, solar arrays, and inverters for campers, boats, and off-grid systems.",
   "type": "module",
   "main": "dist/index.js",
@@ -22,15 +22,16 @@
     "server.json"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run build:viewer",
     "prepublishOnly": "npm run build",
     "start": "node dist/index.js",
     "start:http": "node dist/index.js --http",
-    "dev": "tsx src/index.ts",
-    "dev:http": "tsx src/index.ts --http",
-    "test": "vitest run",
+    "dev": "npm run build:viewer && tsx src/index.ts",
+    "dev:http": "npm run build:viewer && tsx src/index.ts --http",
+    "test": "npm run build:viewer && vitest run",
     "test:watch": "vitest",
-    "openai-plugin:zip": "rm -f openai-plugin.zip && cd openai-plugin && zip -r -X ../openai-plugin.zip plugin.json mcp.json assets"
+    "openai-plugin:zip": "rm -f openai-plugin.zip && cd openai-plugin && zip -r -X ../openai-plugin.zip plugin.json mcp.json assets",
+    "build:viewer": "tsc -p viewer && node scripts/build-viewer.mjs"
   },
   "keywords": [
     "mcp",
@@ -52,13 +53,15 @@
   "license": "MIT",
   "mcpName": "io.github.YUZU-Hub/wiring-diagram-mcp",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.28.0",
+    "@modelcontextprotocol/ext-apps": "^1.7.5",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "express": "^5.1.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
+    "esbuild": "^0.28.2",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
     "vitest": "^4.1.3"

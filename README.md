@@ -184,13 +184,25 @@ docker run -p 3001:3001 wiring-diagram-mcp
 
 ![Architecture](./docs/architecture.svg)
 
-Calculations run inside the MCP server and are deterministic. Diagram rendering hits the VoltPlan API and returns a PNG (or SVG) that the AI client shows in the chat. `find_components` and `build_bom` call VoltPlan's public `/api/components/match` and `/api/diagram/bom` endpoints; the shopping list is sized by the same code that renders the diagram. `calculate_wire_gauge` additionally reads VoltPlan's public catalogue (cached for an hour) to link the recommended cable and fuse to a curated product; without it the links fall back to a store search.
+Calculations run inside the MCP server and are deterministic. Diagram rendering hits the VoltPlan API and returns a PNG (or SVG) that the AI client shows in the chat, or an interactive viewer in hosts with MCP Apps (see below). `find_components` and `build_bom` call VoltPlan's public `/api/components/match` and `/api/diagram/bom` endpoints; the shopping list is sized by the same code that renders the diagram. `calculate_wire_gauge` additionally reads VoltPlan's public catalogue (cached for an hour) to link the recommended cable and fuse to a curated product; without it the links fall back to a store search.
 
 ### Links and attribution
 
 Buy links go through `voltplan.app/api/go` with `source=mcp`, which picks the reader's local Amazon store; VoltPlan earns a commission on purchases (Amazon Associate). Links to voltplan.app pages carry `utm_source=mcp`.
 
-`https://mcp.voltplan.app/mcp-clean` serves the same tools without buy links and without pointers to other VoltPlan pages (tool descriptions included). Use it where tool output must not carry promotional content, e.g. Anthropic's connector directory. The diagram's editor link stays, because it opens the generated system for editing. `find_components` and `build_bom` return no links at all there: product names, specs, quantities and ratings only.
+`https://mcp.voltplan.app/mcp-clean` serves the same tools without buy links and without pointers to other VoltPlan pages (tool descriptions included). Use it where tool output must not carry promotional content, e.g. Anthropic's connector directory. The diagram's editor link stays, because it opens the generated system for editing. `find_components` and `build_bom` return no links at all there: product names, specs, quantities and ratings only. The same holds for the interactive viewer: there it shows a parts list without buy buttons.
+
+### Interactive diagram in the chat (MCP Apps)
+
+`generate_wiring_diagram` declares an [MCP Apps](https://modelcontextprotocol.io/docs/extensions/apps) view (`_meta.ui.resourceUri` → `ui://wiring-diagram/diagram-viewer-v1.html`, spec 2026-01-26). Hosts that support MCP Apps (Claude, ChatGPT, VS Code Copilot, Goose, …) show the diagram as a viewer in the chat instead of a static image:
+
+- zoom (buttons, Ctrl/⌘ + scroll, pinch, double-click), pan by dragging, fit, full screen where the host offers it;
+- **Open in VoltPlan editor** (through the host's `ui/open-link`);
+- **Shopping list** (**Parts list** on `/mcp-clean`): calls `build_bom` with the same system and shows it as a table below the diagram, with buy buttons on `/mcp`.
+
+The view gets a light SVG (icons loaded from VoltPlan, the only domain in its CSP `resourceDomains`) and the shopping list through the tool results' `_meta`, which the model never sees; the model and hosts without MCP Apps keep getting the PNG and the text. Against a VoltPlan without the `?format=json` render mode the viewer shows that PNG instead of the SVG.
+
+The view lives in `viewer/` and is bundled into `dist/viewer.html` by `npm run build:viewer` (part of `npm run build`, `npm run dev` and `npm test`). Try it locally with the `basic-host` example of [ext-apps](https://github.com/modelcontextprotocol/ext-apps/tree/main/examples/basic-host): `SERVERS='["http://localhost:3001/mcp"]' npx tsx serve.ts`.
 
 ## Telemetry
 
