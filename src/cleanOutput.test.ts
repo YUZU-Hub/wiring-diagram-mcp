@@ -34,8 +34,11 @@ const TOOL_ARGS: Record<string, Record<string, unknown>> = {
 const PRODUCT = { name: 'Power Queen 12V 100Ah', url: 'https://voltplan.app/components/power-queen-100ah' };
 function fakeFetch(url: string | URL | Request): Promise<Response> {
   const href = String(url);
-  if (href.includes('/api/diagram/generate')) {
-    return Promise.resolve(new Response(new Uint8Array([137, 80, 78, 71]), { status: 200 }));
+  if (href.includes('/api/diagram/generate?format=json')) {
+    return Promise.resolve(Response.json({
+      svg: '<svg xmlns="http://www.w3.org/2000/svg"><image href="https://voltplan.app/generic_load.png"/></svg>',
+      png: 'iVBORw0KGgo=',
+    }));
   }
   if (href.includes('/api/collections/')) {
     return Promise.resolve(Response.json({ items: [] }));
@@ -86,6 +89,8 @@ async function allToolText(clean: boolean): Promise<string> {
     for (const item of result.content as Array<{ type: string; text?: string }>) {
       if (item.type === 'text') parts.push(item.text ?? '');
     }
+    // The MCP App viewer shows `_meta` (shopping list, editor link) to the user too.
+    if (result._meta) parts.push(JSON.stringify(result._meta));
   }
   await client.close();
   return parts.join('\n');

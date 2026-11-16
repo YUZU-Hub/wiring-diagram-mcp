@@ -11,7 +11,9 @@ import {
   calculateInverterSize,
   calculateBatteryConfig,
 } from './electricalCalculators.js';
-import { normalizeDiagramInput, stripEmbeddedImages } from './diagramInput.js';
+import { normalizeDiagramInput } from './diagramInput.js';
+import { fetchDiagram } from './diagramRender.js';
+import { bomViewerMeta, diagramViewerMeta, registerViewer, VIEWER_URI } from './viewer.js';
 import {
   COMPONENT_CATEGORIES,
   VOLTPLAN_API_URL,
@@ -29,7 +31,7 @@ import {
   siteUrl,
 } from './links.js';
 
-export const SERVER_VERSION = '0.4.0';
+export const SERVER_VERSION = '0.5.0';
 /** Endpoint serving the tools without promotional output (see createServer). */
 export const CLEAN_PATH = '/mcp-clean';
 
@@ -129,6 +131,7 @@ export function createServer(ctx: { ua?: string; clean?: boolean } = {}): McpSer
     name: 'wiring-diagram-mcp',
     version: SERVER_VERSION,
   });
+  registerViewer(server);
 
   /** Output lines that only promote VoltPlan pages or products; empty when clean. */
   const promo = (...lines: string[]): string[] => (clean ? [] : lines);
@@ -164,6 +167,9 @@ export function createServer(ctx: { ua?: string; clean?: boolean } = {}): McpSer
           .describe('png (default): an image the client displays. svg: SVG markup as text, without component icons, for clients that save or post-process files.'),
       }),
       annotations: { ...CALCULATOR_ANNOTATIONS, openWorldHint: true },
+      // MCP Apps hosts render the result in the interactive viewer (src/viewer.ts);
+      // `ui/resourceUri` is the pre-GA key some hosts still read.
+      _meta: { ui: { resourceUri: VIEWER_URI }, 'ui/resourceUri': VIEWER_URI },
     },
     async (args) => {
       const { format, ...input } = args;
@@ -175,27 +181,11 @@ export function createServer(ctx: { ua?: string; clean?: boolean } = {}): McpSer
       }
       const { request } = normalized;
 
-      const response = await fetch(`${VOLTPLAN_API_URL}/api/diagram/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: format === 'png' ? 'image/png' : 'image/svg+xml',
-        },
-        body: JSON.stringify(request),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        return {
-          isError: true,
-          content: [
-            {
-              type: 'text' as const,
-              text: `Diagram generation failed (${response.status}): ${errorText}`,
-            },
-          ],
-        };
+      const rendered = await fetchDiagram(request, format);
+      if ('error' in rendered) {
+        return { isError: true, content: [{ type: 'text' as const, text: rendered.error }] };
       }
+      const { png, viewerSvg, svgText } = rendered.result;
 
       const editor = editorPrefillLink(request, !clean);
       const summary = [
@@ -210,22 +200,13 @@ export function createServer(ctx: { ua?: string; clean?: boolean } = {}): McpSer
         'Use build_bom to list every part of this system: components, cable per gauge with lengths, fuses, terminals and tools.',
       ].filter(Boolean).join('\n');
 
-      if (format === 'png') {
-        const base64 = Buffer.from(await response.arrayBuffer()).toString('base64');
-        return {
-          content: [
-            { type: 'image' as const, data: base64, mimeType: 'image/png' as const },
-            { type: 'text' as const, text: summary },
-          ],
-        };
-      }
-
-      const svg = stripEmbeddedImages(await response.text());
       return {
         content: [
-          { type: 'text' as const, text: svg },
+          ...(png ? [{ type: 'image' as const, data: png, mimeType: 'image/png' as const }] : []),
+          ...(svgText ? [{ type: 'text' as const, text: svgText }] : []),
           { type: 'text' as const, text: summary },
         ],
+        _meta: diagramViewerMeta({ systemName: request.systemName, svg: viewerSvg, editorUrl: editor.url, clean }),
       };
     }
   );
@@ -314,7 +295,10 @@ export function createServer(ctx: { ua?: string; clean?: boolean } = {}): McpSer
         return { isError: true, content: [{ type: 'text' as const, text: outcome.error }] };
       }
       const editorUrl = clean ? undefined : editorPrefillLink(request).url;
-      return { content: [{ type: 'text' as const, text: formatBom(outcome.result, { clean, editorUrl }) }] };
+      return {
+        content: [{ type: 'text' as const, text: formatBom(outcome.result, { clean, editorUrl }) }],
+        _meta: bomViewerMeta(outcome.result, clean),
+      };
     }
   );
 
@@ -1013,7 +997,8 @@ async function startHttp() {
   app.use((_req: Req, res: Res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Mcp-Session-Id');
+    // Browser clients send Mcp-Protocol-Version on every request after initialize.
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Mcp-Session-Id, Mcp-Protocol-Version');
     res.setHeader('Access-Control-Expose-Headers', 'Mcp-Session-Id');
     next();
   });

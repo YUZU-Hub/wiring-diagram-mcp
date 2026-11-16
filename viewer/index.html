@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>VoltPlan wiring diagram</title>
+  <style>/*__VIEWER_CSS__*/</style>
+</head>
+<body>
+  <main class="vp" id="app">
+    <header class="bar">
+      <div class="title" id="title">Wiring diagram</div>
+      <div class="tools" role="toolbar" aria-label="Zoom">
+        <button type="button" id="zoom-out" aria-label="Zoom out" title="Zoom out">&minus;</button>
+        <button type="button" id="zoom-fit" title="Fit the whole diagram">Fit</button>
+        <button type="button" id="zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
+        <button type="button" id="fullscreen" aria-label="Full screen" title="Full screen" hidden>&#x2922;</button>
+      </div>
+    </header>
+    <div class="viewport" id="viewport">
+      <div class="stage" id="stage"></div>
+      <p class="status" id="status">Drawing the diagram&hellip;</p>
+    </div>
+    <footer class="actions">
+      <span class="hint" id="hint">Drag to move &middot; Ctrl + scroll or pinch to zoom</span>
+      <span class="buttons">
+        <button type="button" id="bom-btn" hidden>Shopping list</button>
+        <button type="button" id="editor-btn" class="primary" hidden>Open in VoltPlan editor</button>
+      </span>
+    </footer>
+    <p class="link-fallback" id="link-fallback" hidden></p>
+    <section class="bom" id="bom" aria-live="polite" hidden></section>
+  </main>
+  <script type="module">/*__VIEWER_JS__*/</script>
+</body>
+</html>
